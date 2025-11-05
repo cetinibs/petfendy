@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import type { TaxiService, CityPricing } from "@/lib/types"
-import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
+import { useState, useMemo } from "react"
+import type { TaxiService, CityPricing, District } from "@/lib/types"
+import { mockTaxiServices, mockCityPricings, mockTurkishCities, mockDistricts } from "@/lib/mock-data"
 import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,32 +14,77 @@ import { Label } from "@/components/ui/label"
 export function TaxiBooking() {
   const [services] = useState<TaxiService[]>(mockTaxiServices)
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
+  const [districts] = useState<District[]>(mockDistricts)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [fromCity, setFromCity] = useState("")
   const [toCity, setToCity] = useState("")
+  const [fromDistrict, setFromDistrict] = useState("")
+  const [toDistrict, setToDistrict] = useState("")
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
-  // Calculate distance based on city pairs or use default
+  // Get districts for selected cities
+  const fromDistrictOptions = useMemo(() => {
+    if (!fromCity) return []
+    return districts.filter(d => d.cityName === fromCity)
+  }, [fromCity, districts])
+
+  const toDistrictOptions = useMemo(() => {
+    if (!toCity) return []
+    return districts.filter(d => d.cityName === toCity)
+  }, [toCity, districts])
+
+  // Reset district when city changes
+  const handleFromCityChange = (city: string) => {
+    setFromCity(city)
+    setFromDistrict("")
+  }
+
+  const handleToCityChange = (city: string) => {
+    setToCity(city)
+    setToDistrict("")
+  }
+
+  // Calculate distance based on city pairs and districts
   const getDistance = (): number => {
     if (!fromCity || !toCity) return 0
-    
-    // Check if there's a predefined city pricing
+
+    // Get selected district information
+    const fromDistrictInfo = fromDistrict ? districts.find(d => d.id === fromDistrict) : null
+    const toDistrictInfo = toDistrict ? districts.find(d => d.id === toDistrict) : null
+
+    // Same city - calculate district-to-district distance
+    if (fromCity === toCity) {
+      if (fromDistrictInfo && toDistrictInfo) {
+        // Distance between districts in same city (approximate using their distances from center)
+        return Math.abs(fromDistrictInfo.distanceFromCenter - toDistrictInfo.distanceFromCenter) || 5
+      }
+      if (fromDistrictInfo) {
+        return fromDistrictInfo.distanceFromCenter * 2 // Round trip from center
+      }
+      return 20 // Default same city distance
+    }
+
+    // Different cities - check for predefined city pricing
     const cityPricing = cityPricings.find(
-      (cp) => 
+      (cp) =>
         (cp.fromCity === fromCity && cp.toCity === toCity) ||
         (cp.fromCity === toCity && cp.toCity === fromCity)
     )
-    
-    if (cityPricing) {
-      return cityPricing.distanceKm
+
+    let baseDistance = cityPricing ? cityPricing.distanceKm : 100
+
+    // Add district distances if available
+    if (fromDistrictInfo) {
+      baseDistance += fromDistrictInfo.distanceFromCenter
     }
-    
-    // Default distance for same city or unknown pairs
-    if (fromCity === toCity) return 20
-    return 100 // Default distance for unknown city pairs
+    if (toDistrictInfo) {
+      baseDistance += toDistrictInfo.distanceFromCenter
+    }
+
+    return baseDistance
   }
 
   const getCityPricing = (): CityPricing | null => {
@@ -89,7 +134,7 @@ export function TaxiBooking() {
     }
 
     if (!fromCity || !toCity) {
-      setError("Lütfen kalkış ve varış şehirlerini seçin")
+      setError("Lütfen kalkış ve varış illerini seçin")
       return
     }
 
@@ -101,7 +146,17 @@ export function TaxiBooking() {
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
+
+    const fromDistrictInfo = fromDistrict ? districts.find(d => d.id === fromDistrict) : null
+    const toDistrictInfo = toDistrict ? districts.find(d => d.id === toDistrict) : null
+
+    const pickupLocation = fromDistrictInfo
+      ? `${fromCity} / ${fromDistrictInfo.name}`
+      : fromCity
+    const dropoffLocation = toDistrictInfo
+      ? `${toCity} / ${toDistrictInfo.name}`
+      : toCity
+
     const cartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
@@ -110,8 +165,8 @@ export function TaxiBooking() {
       price,
       details: {
         serviceName: selectedService.name,
-        pickupLocation: fromCity,
-        dropoffLocation: toCity,
+        pickupLocation,
+        dropoffLocation,
         distance,
         scheduledDate,
         isRoundTrip,
@@ -127,6 +182,8 @@ export function TaxiBooking() {
     setSelectedService(null)
     setFromCity("")
     setToCity("")
+    setFromDistrict("")
+    setToDistrict("")
     setIsRoundTrip(false)
     setScheduledDate("")
   }
@@ -184,13 +241,13 @@ export function TaxiBooking() {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Kalkış Şehri</label>
+              <label className="text-sm font-medium">Kalkış İli</label>
               <select
                 value={fromCity}
-                onChange={(e) => setFromCity(e.target.value)}
+                onChange={(e) => handleFromCityChange(e.target.value)}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
               >
-                <option value="">Şehir seçin</option>
+                <option value="">İl seçin</option>
                 {mockTurkishCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
@@ -199,14 +256,32 @@ export function TaxiBooking() {
               </select>
             </div>
 
+            {fromCity && fromDistrictOptions.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İlçesi</label>
+                <select
+                  value={fromDistrict}
+                  onChange={(e) => setFromDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İlçe seçin (opsiyonel)</option>
+                  {fromDistrictOptions.map((district) => (
+                    <option key={district.id} value={district.id}>
+                      {district.name} (Merkeze {district.distanceFromCenter} km)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">Varış Şehri</label>
+              <label className="text-sm font-medium">Varış İli</label>
               <select
                 value={toCity}
-                onChange={(e) => setToCity(e.target.value)}
+                onChange={(e) => handleToCityChange(e.target.value)}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
               >
-                <option value="">Şehir seçin</option>
+                <option value="">İl seçin</option>
                 {mockTurkishCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
@@ -214,6 +289,24 @@ export function TaxiBooking() {
                 ))}
               </select>
             </div>
+
+            {toCity && toDistrictOptions.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İlçesi</label>
+                <select
+                  value={toDistrict}
+                  onChange={(e) => setToDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İlçe seçin (opsiyonel)</option>
+                  {toDistrictOptions.map((district) => (
+                    <option key={district.id} value={district.id}>
+                      {district.name} (Merkeze {district.distanceFromCenter} km)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
               <Switch id="roundtrip" checked={isRoundTrip} onCheckedChange={setIsRoundTrip} />

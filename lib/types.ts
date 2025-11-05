@@ -94,6 +94,14 @@ export interface TaxiBooking extends Booking {
   isRoundTrip?: boolean
 }
 
+// District (ilçe) information
+export interface District {
+  id: string
+  name: string
+  cityName: string
+  distanceFromCenter: number // Distance from city center in km
+}
+
 // City-based pricing for taxi service
 export interface CityPricing {
   id: string
