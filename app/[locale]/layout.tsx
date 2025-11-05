@@ -2,13 +2,14 @@ import type React from "react"
 import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/next"
-import { Geist, Geist_Mono } from "next/font/google"
+// Disabled Google Fonts for Cloudflare Workers deployment
+// import { Geist, Geist_Mono } from "next/font/google"
 import "../globals.css"
 import { AuthProvider } from "@/components/auth-context"
 import { Toaster } from "@/components/ui/toaster"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+// const _geist = Geist({ subsets: ["latin"] })
+// const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 const locales = ['tr', 'en'];
 
