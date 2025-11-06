@@ -1,0 +1,19 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs",
+  "regions": ["fra1"],
+  "env": {
+    "JWT_SECRET": "@jwt_secret",
+    "JWT_REFRESH_SECRET": "@jwt_refresh_secret",
+    "NEXT_PUBLIC_ENCRYPTION_KEY": "@encryption_key"
+  },
+  "build": {
+    "env": {
+      "JWT_SECRET": "@jwt_secret",
+      "JWT_REFRESH_SECRET": "@jwt_refresh_secret",
+      "NEXT_PUBLIC_ENCRYPTION_KEY": "@encryption_key"
+    }
+  }
+}
