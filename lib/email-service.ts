@@ -1,5 +1,5 @@
-// Mock SendGrid Email Service
-// In production, replace with actual SendGrid API integration
+// SendGrid Email Service Integration
+import sgMail from '@sendgrid/mail'
 
 export interface EmailTemplate {
   to: string
@@ -31,22 +31,62 @@ export interface BookingConfirmationData {
 }
 
 class EmailService {
-  private apiKey: string = process.env.SENDGRID_API_KEY || "mock_sendgrid_key"
-  private fromEmail: string = "noreply@petfendy.com"
+  private apiKey: string = process.env.SENDGRID_API_KEY || ""
+  private fromEmail: string = process.env.SENDGRID_FROM_EMAIL || "noreply@petfendy.com"
   private fromName: string = "Petfendy"
+  private isDevelopment: boolean = process.env.NODE_ENV !== "production"
+
+  constructor() {
+    // Initialize SendGrid only if API key is available
+    if (this.apiKey) {
+      sgMail.setApiKey(this.apiKey)
+    }
+  }
 
   async sendEmail(template: EmailTemplate): Promise<boolean> {
-    // Mock email sending
-    console.log("📧 [Email Service] Sending email...")
-    console.log("To:", template.to)
-    console.log("Subject:", template.subject)
-    console.log("Content:", template.text || template.html)
+    try {
+      // If no API key or in development without key, log to console
+      if (!this.apiKey) {
+        console.log("📧 [Email Service - DEV MODE] Email would be sent:")
+        console.log("To:", template.to)
+        console.log("Subject:", template.subject)
+        console.log("Content:", template.text || template.html.substring(0, 200) + "...")
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+        // In development, still return true so the flow continues
+        return true
+      }
 
-    // Mock success response
-    return true
+      // Send real email via SendGrid
+      const msg = {
+        to: template.to,
+        from: {
+          email: this.fromEmail,
+          name: this.fromName
+        },
+        subject: template.subject,
+        text: template.text || '',
+        html: template.html,
+      }
+
+      await sgMail.send(msg)
+      console.log("✅ [Email Service] Email sent successfully to:", template.to)
+      return true
+    } catch (error: any) {
+      console.error("❌ [Email Service] Failed to send email:", error)
+
+      // If SendGrid returns detailed error
+      if (error.response) {
+        console.error("SendGrid Error Response:", error.response.body)
+      }
+
+      // In development, still return true to not block the flow
+      if (this.isDevelopment) {
+        console.log("⚠️ [Email Service] Development mode: Continuing despite error")
+        return true
+      }
+
+      return false
+    }
   }
 
   async sendInvoiceEmail(data: InvoiceEmailData): Promise<boolean> {
