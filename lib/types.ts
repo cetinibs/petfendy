@@ -63,6 +63,7 @@ export interface TaxiService {
   id: string
   name: string
   description: string
+  taxiType: "vip" | "shared" // VIP: exclusive service, Shared: shared with other pets
   basePrice: number
   pricePerKm: number
   maxPetWeight: number

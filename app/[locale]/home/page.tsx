@@ -15,10 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
@@ -29,7 +29,8 @@ import {
   Shield,
   Car,
   MapPin,
-  Clock
+  Clock,
+  Crown
 } from "lucide-react"
 
 export default function HomePage() {
@@ -227,6 +228,7 @@ export default function HomePage() {
       price: total,
       details: {
         serviceName: selectedService.name,
+        taxiType: selectedService.taxiType,
         pickupCity,
         dropoffCity,
         pickupLocation,
@@ -518,10 +520,19 @@ export default function HomePage() {
                       onClick={() => setSelectedService(service)}
                     >
                       <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-xl">{service.name}</CardTitle>
-                            <CardDescription>{service.description}</CardDescription>
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            {service.taxiType === "vip" ? (
+                              <Crown className="w-5 h-5 text-amber-600" />
+                            ) : (
+                              <Users className="w-5 h-5 text-blue-600" />
+                            )}
+                            <Badge
+                              variant={service.taxiType === "vip" ? "default" : "secondary"}
+                              className={service.taxiType === "vip" ? "bg-amber-600" : "bg-blue-600"}
+                            >
+                              {service.taxiType === "vip" ? "VIP Özel" : "Paylaşımlı"}
+                            </Badge>
                           </div>
                           {selectedService?.id === service.id && (
                             <Badge variant="default" className="gap-1">
@@ -530,6 +541,8 @@ export default function HomePage() {
                             </Badge>
                           )}
                         </div>
+                        <CardTitle className="text-xl">{service.name}</CardTitle>
+                        <CardDescription>{service.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="flex items-center justify-between">

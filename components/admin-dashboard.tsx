@@ -90,9 +90,13 @@ export function AdminDashboard() {
 
   const [newService, setNewService] = useState({
     name: "",
+    description: "",
+    taxiType: "shared" as "vip" | "shared",
     basePrice: 0,
     pricePerKm: 0,
     maxPetWeight: 50,
+    capacity: 1,
+    features: "",
   })
 
   const [newRoomPricing, setNewRoomPricing] = useState({
@@ -185,7 +189,7 @@ export function AdminDashboard() {
 
   // Service management
   const handleAddService = () => {
-    if (!newService.name || newService.basePrice <= 0) {
+    if (!newService.name || newService.basePrice <= 0 || !newService.description) {
       toast({
         title: "Hata",
         description: "Lütfen tüm alanları doldurun",
@@ -197,16 +201,29 @@ export function AdminDashboard() {
     const service: TaxiService = {
       id: `service-${Date.now()}`,
       name: newService.name,
+      description: newService.description,
+      taxiType: newService.taxiType,
       basePrice: newService.basePrice,
       pricePerKm: newService.pricePerKm,
       maxPetWeight: newService.maxPetWeight,
+      capacity: newService.capacity,
+      features: newService.features.split(',').map(f => f.trim()).filter(f => f),
       available: true,
     }
 
     saveServices([...services, service])
-    setNewService({ name: "", basePrice: 0, pricePerKm: 0, maxPetWeight: 50 })
+    setNewService({
+      name: "",
+      description: "",
+      taxiType: "shared",
+      basePrice: 0,
+      pricePerKm: 0,
+      maxPetWeight: 50,
+      capacity: 1,
+      features: "",
+    })
     setShowAddService(false)
-    
+
     toast({
       title: "✅ Başarılı",
       description: `${service.name} eklendi`,
@@ -1061,15 +1078,40 @@ export function AdminDashboard() {
                     <CardTitle className="text-lg">Yeni Taksi Hizmeti</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Hizmet Adı *</label>
+                        <Input
+                          value={newService.name}
+                          onChange={(e) => setNewService({ ...newService, name: e.target.value })}
+                          placeholder="Örn: Premium Pet Taksi"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Taksi Tipi *</label>
+                        <Select
+                          value={newService.taxiType}
+                          onValueChange={(value: "vip" | "shared") => setNewService({ ...newService, taxiType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="vip">VIP Özel</SelectItem>
+                            <SelectItem value="shared">Paylaşımlı</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Hizmet Adı *</label>
+                      <label className="text-sm font-medium">Açıklama *</label>
                       <Input
-                        value={newService.name}
-                        onChange={(e) => setNewService({ ...newService, name: e.target.value })}
-                        placeholder="Örn: Premium Pet Taksi"
+                        value={newService.description}
+                        onChange={(e) => setNewService({ ...newService, description: e.target.value })}
+                        placeholder="Örn: Lüks araçlarla evcil hayvan taşıma hizmeti"
                       />
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-4 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Başlangıç Ücreti (₺) *</label>
                         <Input
@@ -1099,6 +1141,23 @@ export function AdminDashboard() {
                           min="1"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Kapasite (hayvan)</label>
+                        <Input
+                          type="number"
+                          value={newService.capacity}
+                          onChange={(e) => setNewService({ ...newService, capacity: parseInt(e.target.value) || 1 })}
+                          min="1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Özellikler (virgülle ayırın)</label>
+                      <Input
+                        value={newService.features}
+                        onChange={(e) => setNewService({ ...newService, features: e.target.value })}
+                        placeholder="Örn: Güvenli taşıma, Klima, GPS takip"
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button onClick={handleAddService} className="flex-1">
@@ -1118,8 +1177,16 @@ export function AdminDashboard() {
                     <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
-                          <CardTitle className="text-lg">{service.name}</CardTitle>
-                          <CardDescription>Max {service.maxPetWeight}kg</CardDescription>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {service.name}
+                            <Badge
+                              variant={service.taxiType === "vip" ? "default" : "secondary"}
+                              className={service.taxiType === "vip" ? "bg-amber-600" : "bg-blue-600"}
+                            >
+                              {service.taxiType === "vip" ? "VIP" : "Paylaşımlı"}
+                            </Badge>
+                          </CardTitle>
+                          <CardDescription>Max {service.maxPetWeight}kg • {service.capacity} hayvan</CardDescription>
                     </div>
                         <Badge variant={service.available ? "default" : "secondary"}>
                           {service.available ? "Aktif" : "Pasif"}

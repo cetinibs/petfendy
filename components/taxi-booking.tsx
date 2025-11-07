@@ -10,10 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { ArrowLeft, Users, Crown } from "lucide-react"
 
 export function TaxiBooking() {
   const [services] = useState<TaxiService[]>(mockTaxiServices)
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
+  const [selectedTaxiType, setSelectedTaxiType] = useState<"vip" | "shared" | null>(null)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [fromCity, setFromCity] = useState("")
   const [toCity, setToCity] = useState("")
@@ -101,7 +103,7 @@ export function TaxiBooking() {
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
+
     const cartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
@@ -110,6 +112,7 @@ export function TaxiBooking() {
       price,
       details: {
         serviceName: selectedService.name,
+        taxiType: selectedService.taxiType,
         pickupLocation: fromCity,
         dropoffLocation: toCity,
         distance,
@@ -124,6 +127,11 @@ export function TaxiBooking() {
 
     addToCart(cartItem)
     setSuccess(`${selectedService.name} sepete eklendi!`)
+    resetForm()
+  }
+
+  const resetForm = () => {
+    setSelectedTaxiType(null)
     setSelectedService(null)
     setFromCity("")
     setToCity("")
@@ -131,45 +139,191 @@ export function TaxiBooking() {
     setScheduledDate("")
   }
 
+  const filteredServices = selectedTaxiType
+    ? services.filter(s => s.taxiType === selectedTaxiType)
+    : []
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Hayvan Taksi Hizmeti</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {services.map((service) => (
+      {/* Header with back button */}
+      <div className="flex items-center gap-4">
+        {selectedTaxiType && (
+          <Button variant="ghost" size="sm" onClick={resetForm}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Geri
+          </Button>
+        )}
+        <h2 className="text-2xl font-bold">Hayvan Taksi Hizmeti</h2>
+      </div>
+
+      {/* Step 1: Taxi Type Selection */}
+      {!selectedTaxiType && (
+        <div>
+          <p className="text-muted-foreground mb-6">Lütfen taksi tipi seçiniz:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Shared Taxi Option */}
             <Card
-              key={service.id}
-              className={`cursor-pointer transition-all ${
-                selectedService?.id === service.id ? "ring-2 ring-primary" : ""
-              }`}
-              onClick={() => setSelectedService(service)}
+              className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-primary"
+              onClick={() => setSelectedTaxiType("shared")}
             >
-              <CardHeader>
-                <CardTitle className="text-lg">{service.name}</CardTitle>
+              <CardHeader className="text-center pb-4">
+                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <CardTitle className="text-2xl">Paylaşımlı Taksi</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">Başlangıç Ücreti</p>
-                  <p className="font-semibold">₺{service.basePrice}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Km Başına</p>
-                  <p className="font-semibold">₺{service.pricePerKm}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Max Ağırlık</p>
-                  <p className="font-semibold">{service.maxPetWeight} kg</p>
+                <p className="text-center text-muted-foreground">
+                  Diğer evcil hayvanlarla paylaşımlı, ekonomik taşıma servisi
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Uygun fiyatlı</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Diğer hayvanlarla birlikte</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Belirli saatlerde kalkış</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-green-600">✓</span>
+                    <span>Güvenli ve temiz</span>
+                  </li>
+                </ul>
+                <div className="pt-4 text-center">
+                  <p className="text-sm text-muted-foreground">Başlangıç fiyatı</p>
+                  <p className="text-2xl font-bold text-blue-600">₺30'dan başlayan</p>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      </div>
 
+            {/* VIP Taxi Option */}
+            <Card
+              className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-amber-500"
+              onClick={() => setSelectedTaxiType("vip")}
+            >
+              <CardHeader className="text-center pb-4">
+                <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-amber-600" />
+                </div>
+                <CardTitle className="text-2xl">VIP Özel Taksi</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-center text-muted-foreground">
+                  Sadece sizin evcil hayvanınız için özel lüks taşıma
+                </p>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="text-amber-600">★</span>
+                    <span>Özel araç - tek hayvan</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-amber-600">★</span>
+                    <span>İstediğiniz saatte</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-amber-600">★</span>
+                    <span>Veteriner refakat</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-amber-600">★</span>
+                    <span>Premium konfor</span>
+                  </li>
+                </ul>
+                <div className="pt-4 text-center">
+                  <p className="text-sm text-muted-foreground">Başlangıç fiyatı</p>
+                  <p className="text-2xl font-bold text-amber-600">₺100'den başlayan</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Service Selection */}
+      {selectedTaxiType && !selectedService && (
+        <div>
+          <div className="mb-4 p-4 bg-muted rounded-lg">
+            <p className="font-semibold">
+              {selectedTaxiType === "vip" ? "VIP Özel Taksi" : "Paylaşımlı Taksi"} seçtiniz.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {selectedTaxiType === "vip"
+                ? "Lütfen premium taksi servislerinden birini seçin:"
+                : "Lütfen paylaşımlı taksi servislerinden birini seçin:"}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredServices.map((service) => (
+              <Card
+                key={service.id}
+                className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-primary"
+                onClick={() => setSelectedService(service)}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    {service.taxiType === "vip" ? (
+                      <Crown className="h-5 w-5 text-amber-600" />
+                    ) : (
+                      <Users className="h-5 w-5 text-blue-600" />
+                    )}
+                    {service.name}
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">{service.description}</p>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Başlangıç Ücreti</p>
+                      <p className="font-semibold text-lg">₺{service.basePrice}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Km Başına</p>
+                      <p className="font-semibold text-lg">₺{service.pricePerKm}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Max Ağırlık</p>
+                      <p className="font-semibold">{service.maxPetWeight} kg</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Kapasite</p>
+                      <p className="font-semibold">{service.capacity} hayvan</p>
+                    </div>
+                  </div>
+                  <div className="pt-2">
+                    <p className="text-xs text-muted-foreground mb-2">Özellikler:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {service.features.slice(0, 3).map((feature, idx) => (
+                        <span key={idx} className="text-xs bg-secondary px-2 py-1 rounded">
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Booking Details */}
       {selectedService && (
         <Card>
           <CardHeader>
-            <CardTitle>{selectedService.name} - Rezervasyon Detayları</CardTitle>
+            <div className="flex items-center gap-2">
+              {selectedService.taxiType === "vip" ? (
+                <Crown className="h-5 w-5 text-amber-600" />
+              ) : (
+                <Users className="h-5 w-5 text-blue-600" />
+              )}
+              <CardTitle>{selectedService.name} - Rezervasyon Detayları</CardTitle>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">{selectedService.description}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             {error && (
