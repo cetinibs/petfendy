@@ -75,31 +75,82 @@ export default function HomePage() {
   }, [])
 
   const stats = [
-    { icon: Users, label: "Misafir Edilen Dostlar", value: "1000+" },
-    { icon: Award, label: "Eğitim Verilen Köpek", value: "200+" },
-    { icon: Calendar, label: "Kreş ve Sosyalleşme", value: "400+" },
+    { icon: Users, label: "Mutlu Müşteri", value: "1000+" },
+    { icon: Award, label: "Eğitimli Evcil Hayvan", value: "200+" },
+    { icon: Calendar, label: "Yıllık Deneyim", value: "5+" },
   ]
 
   const features = [
     {
       icon: Home,
       title: "Kafessiz Konaklama",
-      description: "7/24 açık, konforlu ve geniş alanlar"
+      description: "Evcil dostlarınız için 7/24 açık, geniş ve konforlu alanlar. Evlerinden uzaktayken bile ev konforunda hissedecekler."
     },
     {
       icon: Award,
       title: "Profesyonel Eğitim",
-      description: "Temel ve ileri seviye köpek eğitimi"
+      description: "Uzman eğitmenlerimizle temel itaat eğitiminden ileri seviye davranış düzeltmeye kadar tam destek."
     },
     {
       icon: Heart,
       title: "Özenli Bakım",
-      description: "Pet kuaför ve özel bakım hizmetleri"
+      description: "Profesyonel pet kuaför hizmetleri, özel diyet programları ve kişiselleştirilmiş bakım."
     },
     {
       icon: Shield,
-      title: "Güvenli Ortam",
-      description: "24 saat veteriner desteği ve güvenlik"
+      title: "Güvenli ve Hijyenik",
+      description: "24 saat veteriner desteği, sürekli izleme ve hijyen standartlarında üst düzey hizmet."
+    },
+    {
+      icon: Car,
+      title: "Pet Taksi Hizmeti",
+      description: "Evcil dostlarınızın güvenli transferi için özel araçlarla kapıdan kapıya ulaşım."
+    },
+    {
+      icon: PawPrint,
+      title: "Sosyalleşme ve Oyun",
+      description: "Günlük aktiviteler, oyun saatleri ve diğer dostlarla sosyalleşme imkanı."
+    }
+  ]
+
+  const testimonials = [
+    {
+      name: "Ayşe Yılmaz",
+      comment: "Köpeğim Max'i buraya bırakırken çok endişeliydim ama geri aldığımda çok mutlu ve bakımlıydı. Gerçekten harika bir hizmet!",
+      rating: 5
+    },
+    {
+      name: "Mehmet Demir",
+      comment: "Profesyonel eğitim hizmeti sayesinde köpeğimiz Bella'nın davranışlarında inanılmaz gelişmeler gördük. Teşekkürler Petfendy!",
+      rating: 5
+    },
+    {
+      name: "Zeynep Kaya",
+      comment: "Pet taksi hizmeti çok işime yaradı. Arabam olmadığı için veterinere götürmekte zorlanıyordum. Artık çok kolay!",
+      rating: 5
+    }
+  ]
+
+  const howItWorks = [
+    {
+      step: "1",
+      title: "Rezervasyon Yapın",
+      description: "Online sistemimizden kolayca rezervasyon oluşturun"
+    },
+    {
+      step: "2",
+      title: "Evcil Dostunuzu Getirin",
+      description: "Belirlenen tarihte tesisimize teslim edin"
+    },
+    {
+      step: "3",
+      title: "Huzur İçinde Zaman Geçirin",
+      description: "Biz hallederken siz keyfini çıkarın"
+    },
+    {
+      step: "4",
+      title: "Mutlu Bir Şekilde Alın",
+      description: "Bakımlı ve mutlu dostunuzla tekrar buluşun"
     }
   ]
 
@@ -253,9 +304,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <Image
               src="/petfendy-logo.svg"
               alt="Petfendy Logo"
@@ -267,15 +318,15 @@ export default function HomePage() {
             <div>
               <h1 className="text-xl font-bold text-primary">PETFENDY</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                Evcil Hayvan Oteli
+                Evcil Hayvan Oteli & Eğitim Merkezi
               </p>
             </div>
           </div>
-          
+
           <div className="flex gap-2 items-center">
-            <Button 
-              variant="outline" 
-              className="gap-2"
+            <Button
+              variant="outline"
+              className="gap-2 hover:bg-primary/10 transition-colors"
               onClick={() => router.push('/tr')}
             >
               <ShoppingCart className="w-4 h-4" />
@@ -284,7 +335,7 @@ export default function HomePage() {
                 <Badge variant="destructive" className="ml-1">{cartItemCount}</Badge>
               )}
             </Button>
-            <Button onClick={() => router.push('/tr')}>
+            <Button onClick={() => router.push('/tr')} className="shadow-lg hover:shadow-xl transition-shadow">
               Giriş Yap
             </Button>
           </div>
@@ -292,33 +343,73 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-24 md:py-32 overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10"></div>
+
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4">
-              Petfendy Evcil Hayvan Oteli Ve Köpek Eğitim Merkezi
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+              <PawPrint className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium text-primary">Ankara'nın En Güvenilir Evcil Hayvan Oteli</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+              Evcil Dostlarınız İçin<br />
+              <span className="text-primary">Huzurlu Bir Tatil</span>
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Ankara'nın kedi, köpek ve evcil hayvan oteli
+
+            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto leading-relaxed">
+              Kafessiz konaklama, profesyonel eğitim ve 7/24 veteriner desteği ile
+              evcil hayvanlarınız güvende ve mutlu
             </p>
-            <Button 
-              size="lg" 
-              className="gap-2"
-              onClick={handleReservationClick}
-            >
-              Rezervasyon Yap
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button
+                size="lg"
+                className="gap-2 px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                onClick={handleReservationClick}
+              >
+                Hemen Rezervasyon Yap
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 px-8 py-6 text-lg hover:bg-white transition-all"
+                onClick={() => {
+                  document.getElementById('features-section')?.scrollIntoView({ behavior: 'smooth' })
+                }}
+              >
+                Hizmetlerimizi Keşfedin
+              </Button>
+            </div>
+
+            {/* Trust indicators */}
+            <div className="flex flex-wrap justify-center gap-6 mt-12 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                <span>7/24 Veteriner Desteği</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                <span>Kafessiz Konaklama</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check className="w-5 h-5 text-green-500" />
+                <span>Kamera ile Canlı İzleme</span>
+              </div>
+            </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
             {stats.map((stat, idx) => (
-              <Card key={idx} className="text-center">
-                <CardContent className="pt-6">
-                  <stat.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-3xl font-bold text-primary mb-2">{stat.value}</h3>
-                  <p className="text-muted-foreground">{stat.label}</p>
+              <Card key={idx} className="text-center border-none shadow-xl hover:shadow-2xl transition-shadow bg-white/80 backdrop-blur">
+                <CardContent className="pt-8 pb-8">
+                  <stat.icon className="w-14 h-14 mx-auto mb-4 text-primary" />
+                  <h3 className="text-4xl font-bold text-primary mb-2">{stat.value}</h3>
+                  <p className="text-muted-foreground font-medium">{stat.label}</p>
                 </CardContent>
               </Card>
             ))}
@@ -327,20 +418,97 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white">
+      <section id="features-section" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Neden Petfendy?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Neden Petfendy'yi Seçmelisiniz?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Evcil dostlarınızın konforlu ve güvenli bir ortamda vakit geçirmesi için sunduğumuz özel hizmetler
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, idx) => (
-              <Card key={idx} className="text-center hover:shadow-lg transition-shadow">
+              <Card key={idx} className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary/20">
                 <CardHeader>
-                  <feature.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+                    <feature.icon className="w-8 h-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-xl mb-2">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Nasıl Çalışır?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              4 basit adımda evcil dostunuz için rezervasyon yapın
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {howItWorks.map((step, idx) => (
+              <div key={idx} className="relative">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-primary text-white rounded-full flex items-center justify-center text-3xl font-bold mx-auto mb-6 shadow-lg">
+                    {step.step}
+                  </div>
+                  <h3 className="text-xl font-bold mb-3">{step.title}</h3>
+                  <p className="text-muted-foreground">{step.description}</p>
+                </div>
+                {/* Arrow connector - hidden on last item and mobile */}
+                {idx < howItWorks.length - 1 && (
+                  <ChevronRight className="hidden lg:block absolute top-10 -right-4 w-8 h-8 text-primary/30" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Müşterilerimiz Ne Diyor?
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Binlerce mutlu müşterimizin deneyimlerinden bazıları
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, idx) => (
+              <Card key={idx} className="border-2 hover:shadow-xl transition-shadow">
+                <CardContent className="pt-6">
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, i) => (
+                      <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                    ))}
+                  </div>
+                  <p className="text-gray-700 mb-6 italic leading-relaxed">
+                    "{testimonial.comment}"
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{testimonial.name}</p>
+                      <p className="text-sm text-gray-500">Petfendy Müşterisi</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -350,11 +518,20 @@ export default function HomePage() {
 
       {/* Reservation Section */}
       {showReservation && (
-        <section id="reservation-section" className="py-20 bg-gray-50">
+        <section id="reservation-section" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
           <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Rezervasyon Yapın
-            </h2>
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
+                <Calendar className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium text-primary">Hızlı ve Kolay Rezervasyon</span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Rezervasyon Yapın
+              </h2>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Otel veya taksi hizmetlerimiz için hemen rezervasyon oluşturun
+              </p>
+            </div>
 
             <Tabs defaultValue="hotel" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-8">
@@ -732,59 +909,168 @@ export default function HomePage() {
       )}
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">
+      <section className="relative py-24 bg-gradient-to-br from-primary via-blue-600 to-indigo-700 text-white overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '40px 40px'
+          }}></div>
+        </div>
+
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
+            <PawPrint className="w-4 h-4" />
+            <span className="text-sm font-medium">Güvenilir ve Profesyonel Hizmet</span>
+          </div>
+
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Evcil Dostunuz İçin En İyisini Seçin
           </h2>
-          <p className="text-lg mb-8 opacity-90">
-            Kafessiz konaklama, profesyonel eğitim ve özenli bakım hizmetlerimiz ile
-            evcil dostlarınız güvende
+
+          <p className="text-xl mb-10 opacity-90 leading-relaxed max-w-2xl mx-auto">
+            Kafessiz konaklama, profesyonel eğitim ve 7/24 veteriner desteği ile
+            evcil dostlarınız güvende ve mutlu olsun
           </p>
-          <Button 
-            size="lg" 
-            variant="secondary"
-            onClick={handleReservationClick}
-          >
-            Hemen Rezervasyon Yap
-          </Button>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              variant="secondary"
+              className="gap-2 px-8 py-6 text-lg shadow-xl hover:shadow-2xl transition-all hover:scale-105"
+              onClick={handleReservationClick}
+            >
+              Hemen Rezervasyon Yap
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="gap-2 px-8 py-6 text-lg border-2 border-white text-white hover:bg-white hover:text-primary transition-all"
+              onClick={() => router.push('/tr')}
+            >
+              Giriş Yap
+            </Button>
+          </div>
+
+          {/* Contact info */}
+          <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm opacity-90">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5" />
+              <span>Etimesgut, Ankara</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              <span>7/24 Hizmet</span>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-gray-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <h3 className="font-bold text-lg mb-4">İletişim</h3>
-              <p className="text-sm text-gray-400">
-                Şehit Hikmet Özer Cd. No:101<br />
-                Etimesgut/Ankara
-              </p>
-              <p className="text-sm text-gray-400 mt-2">
-                Tel: +90 532 307 3264<br />
-                Email: petfendyotel@gmail.com
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+            {/* Brand */}
+            <div className="md:col-span-1">
+              <div className="flex items-center gap-3 mb-4">
+                <Image
+                  src="/petfendy-logo.svg"
+                  alt="Petfendy Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10"
+                />
+                <div>
+                  <h3 className="font-bold text-lg">PETFENDY</h3>
+                  <p className="text-xs text-gray-400">Evcil Hayvan Oteli</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Ankara'nın en güvenilir ve profesyonel evcil hayvan oteli
               </p>
             </div>
+
+            {/* Contact */}
             <div>
-              <h3 className="font-bold text-lg mb-4">Çalışma Saatleri</h3>
-              <p className="text-sm text-gray-400">
-                Pazartesi - Pazar<br />
-                08:00 - 20:00
-              </p>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-primary" />
+                İletişim
+              </h3>
+              <div className="space-y-3 text-sm text-gray-400">
+                <p>
+                  Şehit Hikmet Özer Cd. No:101<br />
+                  Etimesgut/Ankara
+                </p>
+                <p>
+                  <span className="text-white font-medium">Tel:</span> +90 532 307 3264
+                </p>
+                <p>
+                  <span className="text-white font-medium">Email:</span> petfendyotel@gmail.com
+                </p>
+              </div>
             </div>
+
+            {/* Hours */}
             <div>
-              <h3 className="font-bold text-lg mb-4">Hizmetler</h3>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Çalışma Saatleri
+              </h3>
+              <div className="space-y-2 text-sm text-gray-400">
+                <p className="flex justify-between">
+                  <span className="text-white">Pazartesi - Pazar</span>
+                </p>
+                <p className="text-lg text-white font-semibold">08:00 - 20:00</p>
+                <p className="text-primary font-medium mt-3">
+                  🔔 Acil Durumlar İçin 7/24 Ulaşılabilir
+                </p>
+              </div>
+            </div>
+
+            {/* Services */}
+            <div>
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <PawPrint className="w-5 h-5 text-primary" />
+                Hizmetler
+              </h3>
               <ul className="text-sm text-gray-400 space-y-2">
-                <li>• Köpek Eğitimi</li>
-                <li>• Kedi - Köpek Oteli</li>
-                <li>• Pet Kuaför</li>
-                <li>• Kreş ve Sosyalleşme</li>
+                <li className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Check className="w-4 h-4 text-primary" />
+                  Köpek Eğitimi
+                </li>
+                <li className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Check className="w-4 h-4 text-primary" />
+                  Kedi - Köpek Oteli
+                </li>
+                <li className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Check className="w-4 h-4 text-primary" />
+                  Pet Kuaför
+                </li>
+                <li className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Check className="w-4 h-4 text-primary" />
+                  Kreş ve Sosyalleşme
+                </li>
+                <li className="flex items-center gap-2 hover:text-white transition-colors">
+                  <Check className="w-4 h-4 text-primary" />
+                  Pet Taksi Hizmeti
+                </li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-400">
-            © 2025 Petfendy Evcil Hayvan Oteli. Tüm hakları saklıdır.
+
+          {/* Bottom */}
+          <div className="border-t border-gray-800 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-400">
+                © 2025 Petfendy Evcil Hayvan Oteli. Tüm hakları saklıdır.
+              </p>
+              <div className="flex gap-6 text-sm text-gray-400">
+                <a href="#" className="hover:text-white transition-colors">Gizlilik Politikası</a>
+                <a href="#" className="hover:text-white transition-colors">Kullanım Şartları</a>
+                <a href="#" className="hover:text-white transition-colors">SSS</a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>
