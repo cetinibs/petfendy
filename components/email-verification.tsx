@@ -35,34 +35,42 @@ export function EmailVerification({ onSuccess, onCancel }: EmailVerificationProp
     setIsLoading(true)
     try {
       const pendingUser = getPendingUser()
-      
-      if (!pendingUser || !pendingUser.verificationCode) {
+
+      if (!pendingUser || !pendingUser.email) {
         setError("Doğrulama bilgileri bulunamadı. Lütfen tekrar kayıt olun.")
         return
       }
 
-      // Check expiry
-      if (pendingUser.verificationCodeExpiry && new Date(pendingUser.verificationCodeExpiry) < new Date()) {
-        setError("Doğrulama kodu süresi doldu. Lütfen yeni kod isteyin.")
+      // Call verification API
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: pendingUser.email,
+          verificationCode,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Doğrulama başarısız. Lütfen tekrar deneyin.")
         return
       }
 
-      // Verify code
-      if (pendingUser.verificationCode === verificationCode) {
-        const verifiedUser = { 
-          ...pendingUser, 
-          emailVerified: true,
-          verificationCode: undefined,
-          verificationCodeExpiry: undefined
-        }
-        clearPendingUser()
-        setSuccess(t('emailVerified'))
-        setTimeout(() => {
-          onSuccess(verifiedUser)
-        }, 1000)
-      } else {
-        setError(t('invalidCode'))
+      // Verification successful
+      const verifiedUser = {
+        ...pendingUser,
+        ...data.user,
+        emailVerified: true,
       }
+      clearPendingUser()
+      setSuccess(t('emailVerified'))
+      setTimeout(() => {
+        onSuccess(verifiedUser)
+      }, 1000)
     } catch (err) {
       setError("Doğrulama başarısız. Lütfen tekrar deneyin.")
     } finally {
@@ -77,28 +85,30 @@ export function EmailVerification({ onSuccess, onCancel }: EmailVerificationProp
 
     try {
       const pendingUser = getPendingUser()
-      
-      if (!pendingUser || !pendingUser.email || !pendingUser.name) {
+
+      if (!pendingUser || !pendingUser.email) {
         setError("Kullanıcı bilgileri bulunamadı")
         return
       }
 
-      // Generate new verification code
-      const newCode = Math.floor(100000 + Math.random() * 900000).toString()
-      const expiry = new Date()
-      expiry.setMinutes(expiry.getMinutes() + 15)
+      // Call resend code API
+      const response = await fetch('/api/auth/resend-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: pendingUser.email,
+        }),
+      })
 
-      const updatedUser = {
-        ...pendingUser,
-        verificationCode: newCode,
-        verificationCodeExpiry: expiry
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || "Kod gönderilemedi. Lütfen tekrar deneyin.")
+        return
       }
 
-      // Save to storage
-      localStorage.setItem('petfendy_pending_user', JSON.stringify(updatedUser))
-
-      // Send email
-      await emailService.sendVerificationEmail(pendingUser.email, newCode, pendingUser.name)
       setSuccess("Yeni doğrulama kodu gönderildi!")
     } catch (err) {
       setError("Kod gönderilemedi. Lütfen tekrar deneyin.")

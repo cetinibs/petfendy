@@ -69,32 +69,35 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
 
     setIsLoading(true)
     try {
-      // Generate verification code
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString()
-      const expiry = new Date()
-      expiry.setMinutes(expiry.getMinutes() + 15)
+      // Call registration API
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: sanitizedEmail,
+          password: formData.password,
+          name: sanitizedName,
+          phone: formData.phone,
+        }),
+      })
 
-      // Create pending user
-      const passwordHash = await hashPassword(formData.password)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setErrors({ submit: data.error || "Kayıt başarısız. Lütfen tekrar deneyin." })
+        return
+      }
+
+      // Save pending user to local storage for verification
       const pendingUser: Partial<User> = {
-        id: `user-${Date.now()}`,
+        ...data.user,
         email: sanitizedEmail,
         name: sanitizedName,
         phone: formData.phone,
-        passwordHash,
-        role: "user",
-        emailVerified: false,
-        verificationCode,
-        verificationCodeExpiry: expiry,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       }
-
-      // Save to storage
       setPendingUser(pendingUser)
-
-      // Send verification email
-      await emailService.sendVerificationEmail(sanitizedEmail, verificationCode, sanitizedName)
 
       // Show verification screen
       setShowVerification(true)

@@ -34,20 +34,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
-      // Mock authentication - check if admin
-      const isAdmin = email === "admin@petfendy.com" && password === "admin123"
-      
-      const mockUser: Partial<User> = {
-        id: isAdmin ? "admin-1" : "user-" + Date.now(),
-        email,
-        name: isAdmin ? "Admin User" : email.split('@')[0],
-        role: isAdmin ? "admin" : "user",
+      // Call login API
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        if (data.emailNotVerified) {
+          throw new Error("E-posta adresiniz doğrulanmamış. Lütfen e-postanıza gelen doğrulama kodunu kullanın.")
+        }
+        throw new Error(data.error || "Giriş başarısız")
       }
 
-      const token = "mock_token_" + Date.now()
+      const user: Partial<User> = data.user
+      const token = data.token
+
       setAuthToken(token)
-      setCurrentUser(mockUser)
-      setUser(mockUser)
+      setCurrentUser(user)
+      setUser(user)
     } catch (error) {
       console.error("Login error:", error)
       throw error
@@ -59,18 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = async (email: string, password: string, name: string, phone: string) => {
     setIsLoading(true)
     try {
-      // Mock registration - in production, call your API
-      const mockUser: Partial<User> = {
-        id: Date.now().toString(),
-        email,
-        name,
-        role: "user",
-      }
-
-      const token = "mock_token_" + Date.now()
-      setAuthToken(token)
-      setCurrentUser(mockUser)
-      setUser(mockUser)
+      // After email verification, complete registration by logging in
+      await login(email, password)
     } catch (error) {
       console.error("Registration error:", error)
       throw error
