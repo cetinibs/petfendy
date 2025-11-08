@@ -306,7 +306,11 @@ export default function HomePage() {
       {/* Header / Navigation */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+          }}>
             <Image
               src="/petfendy-logo.svg"
               alt="Petfendy Logo"
