@@ -69,6 +69,21 @@ export interface TaxiService {
   capacity: number
   features: string[]
   available: boolean
+  taxiType: "vip" | "shared" // VIP: özel taksi, Shared: paylaşımlı taksi
+}
+
+// Paylaşımlı taksi için seyahat programı
+export interface SharedTaxiSchedule {
+  id: string
+  taxiServiceId: string
+  fromCity: string
+  toCity: string
+  travelDate: Date // Seyahat tarihi
+  maxCapacity: number // Maksimum kapasite
+  bookedCount: number // Rezerve edilen koltuk sayısı
+  pricePerSeat: number // Koltuk başına fiyat
+  departureTime: string // Kalkış saati (örn: "09:00")
+  status: "active" | "full" | "cancelled" | "completed"
 }
 
 // TaxiRequest from ERD - separate from TaxiBooking for better structure
@@ -92,6 +107,9 @@ export interface TaxiBooking extends Booking {
   distance: number
   scheduledDate: Date
   isRoundTrip?: boolean
+  taxiType: "vip" | "shared" // Taksi tipi
+  scheduleId?: string // Paylaşımlı taksi için program ID'si
+  numberOfSeats?: number // Paylaşımlı taksi için koltuk sayısı
 }
 
 // City-based pricing for taxi service

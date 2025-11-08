@@ -197,10 +197,14 @@ export function AdminDashboard() {
     const service: TaxiService = {
       id: `service-${Date.now()}`,
       name: newService.name,
+      description: "Yeni taksi hizmeti",
       basePrice: newService.basePrice,
       pricePerKm: newService.pricePerKm,
       maxPetWeight: newService.maxPetWeight,
+      capacity: 1,
+      features: ["Güvenli taşıma"],
       available: true,
+      taxiType: "vip",
     }
 
     saveServices([...services, service])
