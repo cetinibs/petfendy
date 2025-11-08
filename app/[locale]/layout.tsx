@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { notFound } from 'next/navigation';
 import { Analytics } from "@vercel/analytics/next"
 import { Geist, Geist_Mono } from "next/font/google"
+import { SessionProvider } from "next-auth/react"
 import "../globals.css"
 import { AuthProvider } from "@/components/auth-context"
 import { Toaster } from "@/components/ui/toaster"
@@ -70,10 +71,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className={`font-sans antialiased`}>
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          <AuthProvider>{children}</AuthProvider>
-          <Toaster />
-        </NextIntlClientProvider>
+        <SessionProvider>
+          <NextIntlClientProvider messages={messages} locale={locale}>
+            <AuthProvider>{children}</AuthProvider>
+            <Toaster />
+          </NextIntlClientProvider>
+        </SessionProvider>
         <Analytics />
       </body>
     </html>

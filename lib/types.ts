@@ -5,11 +5,13 @@ export interface User {
   email: string
   name: string
   phone: string
-  passwordHash: string
+  passwordHash?: string // Optional for OAuth users
   role: "user" | "admin"
   emailVerified: boolean
   verificationCode?: string
   verificationCodeExpiry?: Date
+  googleId?: string // Google OAuth ID
+  image?: string // Profile image URL from Google
   createdAt: Date
   updatedAt: Date
 }

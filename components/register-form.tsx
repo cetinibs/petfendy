@@ -17,7 +17,7 @@ import { useTranslations } from 'next-intl';
 import type { User } from "@/lib/types"
 
 export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
-  const { register } = useAuth()
+  const { register, loginWithGoogle } = useAuth()
   const t = useTranslations('auth');
   const [showVerification, setShowVerification] = useState(false)
   const [formData, setFormData] = useState({
@@ -29,6 +29,7 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -119,6 +120,19 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const handleVerificationCancel = () => {
     setShowVerification(false)
+  }
+
+  const handleGoogleRegister = async () => {
+    setErrors({})
+    setIsGoogleLoading(true)
+    try {
+      await loginWithGoogle()
+      onSuccess?.()
+    } catch (err) {
+      setErrors({ submit: "Google ile kayıt başarısız. Lütfen tekrar deneyin." })
+    } finally {
+      setIsGoogleLoading(false)
+    }
   }
 
   if (showVerification) {
@@ -224,8 +238,32 @@ export function RegisterForm({ onSuccess }: { onSuccess?: () => void }) {
             {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
             {isLoading ? "Kayıt yapılıyor..." : t('registerTitle')}
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                veya
+              </span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleRegister}
+            disabled={isLoading || isGoogleLoading}
+          >
+            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512">
+              <path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path>
+            </svg>
+            {isGoogleLoading ? "Google ile kayıt yapılıyor..." : "Google ile Kayıt Ol"}
           </Button>
         </form>
       </CardContent>
