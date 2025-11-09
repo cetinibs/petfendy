@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type { TaxiService, CityPricing } from "@/lib/types"
-import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
+import { mockTaxiServices, mockCityPricings, mockTurkishCities, mockCityDistricts } from "@/lib/mock-data"
 import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,7 +16,9 @@ export function TaxiBooking() {
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [fromCity, setFromCity] = useState("")
+  const [fromDistrict, setFromDistrict] = useState("")
   const [toCity, setToCity] = useState("")
+  const [toDistrict, setToDistrict] = useState("")
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
@@ -187,7 +189,10 @@ export function TaxiBooking() {
               <label className="text-sm font-medium">Kalkış Şehri</label>
               <select
                 value={fromCity}
-                onChange={(e) => setFromCity(e.target.value)}
+                onChange={(e) => {
+                  setFromCity(e.target.value)
+                  setFromDistrict("") // Reset district when city changes
+                }}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
               >
                 <option value="">Şehir seçin</option>
@@ -199,11 +204,32 @@ export function TaxiBooking() {
               </select>
             </div>
 
+            {fromCity && mockCityDistricts[fromCity] && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İlçesi</label>
+                <select
+                  value={fromDistrict}
+                  onChange={(e) => setFromDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İlçe seçin</option>
+                  {mockCityDistricts[fromCity].map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Varış Şehri</label>
               <select
                 value={toCity}
-                onChange={(e) => setToCity(e.target.value)}
+                onChange={(e) => {
+                  setToCity(e.target.value)
+                  setToDistrict("") // Reset district when city changes
+                }}
                 className="w-full px-3 py-2 border border-input rounded-md bg-background"
               >
                 <option value="">Şehir seçin</option>
@@ -214,6 +240,24 @@ export function TaxiBooking() {
                 ))}
               </select>
             </div>
+
+            {toCity && mockCityDistricts[toCity] && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İlçesi</label>
+                <select
+                  value={toDistrict}
+                  onChange={(e) => setToDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İlçe seçin</option>
+                  {mockCityDistricts[toCity].map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
               <Switch id="roundtrip" checked={isRoundTrip} onCheckedChange={setIsRoundTrip} />

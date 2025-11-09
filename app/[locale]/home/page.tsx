@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { addToCart, getCart } from "@/lib/storage"
-import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
+import { mockHotelRooms, mockTaxiServices, mockTurkishCities, mockCityDistricts } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
 import { 
   Home, 
@@ -48,7 +48,9 @@ export default function HomePage() {
   const [taxiServices] = useState<TaxiService[]>(mockTaxiServices)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [pickupCity, setPickupCity] = useState("")
+  const [pickupDistrict, setPickupDistrict] = useState("")
   const [dropoffCity, setDropoffCity] = useState("")
+  const [dropoffDistrict, setDropoffDistrict] = useState("")
   const [pickupLocation, setPickupLocation] = useState("")
   const [dropoffLocation, setDropoffLocation] = useState("")
   const [pickupDate, setPickupDate] = useState("")
@@ -587,7 +589,10 @@ export default function HomePage() {
                               <MapPin className="w-4 h-4" />
                               Kalkış Şehri
                             </label>
-                            <Select value={pickupCity} onValueChange={setPickupCity}>
+                            <Select value={pickupCity} onValueChange={(value) => {
+                              setPickupCity(value)
+                              setPickupDistrict("") // Reset district when city changes
+                            }}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Şehir seçin" />
                               </SelectTrigger>
@@ -605,7 +610,10 @@ export default function HomePage() {
                               <MapPin className="w-4 h-4" />
                               Varış Şehri
                             </label>
-                            <Select value={dropoffCity} onValueChange={setDropoffCity}>
+                            <Select value={dropoffCity} onValueChange={(value) => {
+                              setDropoffCity(value)
+                              setDropoffDistrict("") // Reset district when city changes
+                            }}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Şehir seçin" />
                               </SelectTrigger>
@@ -618,6 +626,50 @@ export default function HomePage() {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+
+                        {/* District Selection */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {pickupCity && mockCityDistricts[pickupCity] && (
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                Kalkış İlçesi
+                              </label>
+                              <Select value={pickupDistrict} onValueChange={setPickupDistrict}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="İlçe seçin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {mockCityDistricts[pickupCity].map((district) => (
+                                    <SelectItem key={district} value={district}>
+                                      {district}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          {dropoffCity && mockCityDistricts[dropoffCity] && (
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium flex items-center gap-2">
+                                <MapPin className="w-4 h-4" />
+                                Varış İlçesi
+                              </label>
+                              <Select value={dropoffDistrict} onValueChange={setDropoffDistrict}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="İlçe seçin" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {mockCityDistricts[dropoffCity].map((district) => (
+                                    <SelectItem key={district} value={district}>
+                                      {district}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
                         </div>
 
                         {/* Address Details */}

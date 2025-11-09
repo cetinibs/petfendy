@@ -76,7 +76,9 @@ export interface TaxiRequest {
   id: string
   userId: string | null // null for guest purchases
   fromCity: string
+  fromDistrict?: string
   toCity: string
+  toDistrict?: string
   distanceKm: number
   kmPrice: number
   totalPrice: number
@@ -98,7 +100,9 @@ export interface TaxiBooking extends Booking {
 export interface CityPricing {
   id: string
   fromCity: string
+  fromDistrict?: string
   toCity: string
+  toDistrict?: string
   additionalFee: number
   discount: number
   distanceKm: number
