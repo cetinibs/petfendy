@@ -15,7 +15,7 @@ import { InvoiceSystem } from "@/components/invoice-system"
 import { ReportsAnalytics } from "@/components/reports-analytics"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LogOut, ShoppingCart, LayoutDashboard, PawPrint, User, FileText, BarChart3, Globe } from "lucide-react"
+import { LogOut, ShoppingCart, LayoutDashboard, PawPrint, User, FileText, BarChart3, Globe, Cat, Dog, Heart } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,20 +93,49 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-100 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Decorative background elements */}
+        <div className="absolute top-20 left-10 opacity-5">
+          <Cat className="w-64 h-64 text-purple-600" />
+        </div>
+        <div className="absolute bottom-20 right-10 opacity-5">
+          <Dog className="w-64 h-64 text-orange-600" />
+        </div>
+        <div className="absolute top-1/2 left-1/3 opacity-5">
+          <PawPrint className="w-40 h-40 text-pink-600" />
+        </div>
+
+        <div className="w-full max-w-md relative z-10">
           <div className="text-center mb-8">
             {/* Logo */}
-            <div className="flex justify-center mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push(`/${locale}/home`)}>
-              <Image
-                src="/petfendy-logo.svg"
-                alt="Petfendy Logo"
-                width={160}
-                height={160}
-                sizes="(max-width: 640px) 8rem, 10rem"
-                className="w-32 h-32 sm:w-40 sm:h-40"
-                priority
-              />
+            <div className="flex justify-center mb-4 cursor-pointer hover:scale-105 transition-transform" onClick={() => router.push(`/${locale}/home`)}>
+              <div className="relative">
+                <Image
+                  src="/petfendy-logo.svg"
+                  alt="Petfendy Logo"
+                  width={160}
+                  height={160}
+                  sizes="(max-width: 640px) 8rem, 10rem"
+                  className="w-32 h-32 sm:w-40 sm:h-40"
+                  priority
+                />
+                <div className="absolute -bottom-2 -right-2 bg-gradient-to-r from-orange-400 to-pink-400 rounded-full p-2 shadow-lg">
+                  <Heart className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Pet icons above tagline */}
+            <div className="flex justify-center gap-3 mb-4">
+              <div className="bg-gradient-to-br from-orange-400 to-orange-500 p-2 rounded-full shadow">
+                <Dog className="w-5 h-5 text-white" />
+              </div>
+              <div className="bg-gradient-to-br from-pink-400 to-pink-500 p-2 rounded-full shadow">
+                <PawPrint className="w-5 h-5 text-white" />
+              </div>
+              <div className="bg-gradient-to-br from-purple-400 to-purple-500 p-2 rounded-full shadow">
+                <Cat className="w-5 h-5 text-white" />
+              </div>
             </div>
             
             {/* Language Selector */}
@@ -171,22 +200,32 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground shadow-lg">
+      <header className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 text-white shadow-xl">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <div 
-              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            <div
+              className="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform"
               onClick={() => router.push(`/${locale}/home`)}
             >
-              <Image
-                src="/petfendy-logo.svg"
-                alt="Petfendy Logo"
-                width={64}
-                height={64}
-                className="h-12 w-12 sm:h-16 sm:w-16"
-                priority
-              />
+              <div className="relative">
+                <Image
+                  src="/petfendy-logo.svg"
+                  alt="Petfendy Logo"
+                  width={64}
+                  height={64}
+                  className="h-12 w-12 sm:h-16 sm:w-16"
+                  priority
+                />
+                <div className="absolute -top-1 -right-1 bg-white rounded-full p-1">
+                  <PawPrint className="w-4 h-4 text-pink-500" />
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-2">
+                <Dog className="w-6 h-6 text-white" />
+                <Heart className="w-5 h-5 text-white" />
+                <Cat className="w-6 h-6 text-white" />
+              </div>
             </div>
 
             {/* Right Side Actions */}

@@ -15,10 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
@@ -29,7 +29,9 @@ import {
   Shield,
   Car,
   MapPin,
-  Clock
+  Clock,
+  Cat,
+  Dog
 } from "lucide-react"
 
 export default function HomePage() {
@@ -75,31 +77,39 @@ export default function HomePage() {
   }, [])
 
   const stats = [
-    { icon: Users, label: "Misafir Edilen Dostlar", value: "1000+" },
-    { icon: Award, label: "Eğitim Verilen Köpek", value: "200+" },
-    { icon: Calendar, label: "Kreş ve Sosyalleşme", value: "400+" },
+    { icon: Cat, label: "Misafir Edilen Kediler", value: "600+", color: "text-purple-500" },
+    { icon: Dog, label: "Eğitim Verilen Köpek", value: "400+", color: "text-orange-500" },
+    { icon: PawPrint, label: "Mutlu Evcil Hayvan", value: "1000+", color: "text-pink-500" },
   ]
 
   const features = [
     {
-      icon: Home,
-      title: "Kafessiz Konaklama",
-      description: "7/24 açık, konforlu ve geniş alanlar"
+      icon: Dog,
+      title: "Köpek Oteli & Eğitim",
+      description: "7/24 açık köpek oteli ve profesyonel eğitim merkezi",
+      color: "text-orange-500",
+      bgColor: "bg-orange-50"
     },
     {
-      icon: Award,
-      title: "Profesyonel Eğitim",
-      description: "Temel ve ileri seviye köpek eğitimi"
+      icon: Cat,
+      title: "Kedi Oteli",
+      description: "Rahat ve konforlu, kedilere özel konaklama alanları",
+      color: "text-purple-500",
+      bgColor: "bg-purple-50"
     },
     {
       icon: Heart,
       title: "Özenli Bakım",
-      description: "Pet kuaför ve özel bakım hizmetleri"
+      description: "Pet kuaför, özel beslenme ve sevgi dolu bakım",
+      color: "text-pink-500",
+      bgColor: "bg-pink-50"
     },
     {
-      icon: Shield,
-      title: "Güvenli Ortam",
-      description: "24 saat veteriner desteği ve güvenlik"
+      icon: Car,
+      title: "Pet Taksi",
+      description: "Güvenli evcil hayvan taşıma servisi, şehir içi ve şehirler arası",
+      color: "text-blue-500",
+      bgColor: "bg-blue-50"
     }
   ]
 
@@ -253,21 +263,28 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <header className="sticky top-0 z-50 bg-gradient-to-r from-orange-50 via-pink-50 to-purple-50 border-b-2 border-orange-200 shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Image
-              src="/petfendy-logo.svg"
-              alt="Petfendy Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-              priority
-            />
+            <div className="relative">
+              <Image
+                src="/petfendy-logo.svg"
+                alt="Petfendy Logo"
+                width={48}
+                height={48}
+                className="w-12 h-12"
+                priority
+              />
+              <PawPrint className="w-4 h-4 text-pink-500 absolute -bottom-1 -right-1" />
+            </div>
             <div>
-              <h1 className="text-xl font-bold text-primary">PETFENDY</h1>
+              <h1 className="text-xl font-bold text-primary flex items-center gap-2">
+                PETFENDY
+                <Dog className="w-5 h-5 text-orange-500" />
+                <Cat className="w-5 h-5 text-purple-500" />
+              </h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
-                Evcil Hayvan Oteli
+                Kedi & Köpek Oteli
               </p>
             </div>
           </div>
@@ -292,20 +309,50 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 py-20 relative overflow-hidden">
+        {/* Decorative pet icons */}
+        <div className="absolute top-10 left-10 opacity-10">
+          <Cat className="w-32 h-32 text-purple-400" />
+        </div>
+        <div className="absolute bottom-10 right-10 opacity-10">
+          <Dog className="w-32 h-32 text-orange-400" />
+        </div>
+        <div className="absolute top-1/2 left-1/4 opacity-10">
+          <PawPrint className="w-24 h-24 text-pink-400" />
+        </div>
+        <div className="absolute top-1/3 right-1/4 opacity-10">
+          <PawPrint className="w-20 h-20 text-purple-300" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 relative z-10">
           <div className="text-center mb-12">
+            {/* Pet icons above title */}
+            <div className="flex justify-center gap-4 mb-6">
+              <div className="bg-gradient-to-br from-orange-400 to-orange-500 p-3 rounded-full shadow-lg animate-bounce">
+                <Dog className="w-8 h-8 text-white" />
+              </div>
+              <div className="bg-gradient-to-br from-pink-400 to-pink-500 p-3 rounded-full shadow-lg">
+                <PawPrint className="w-8 h-8 text-white" />
+              </div>
+              <div className="bg-gradient-to-br from-purple-400 to-purple-500 p-3 rounded-full shadow-lg animate-bounce" style={{animationDelay: '0.2s'}}>
+                <Cat className="w-8 h-8 text-white" />
+              </div>
+            </div>
+
             <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4">
               Petfendy Evcil Hayvan Oteli Ve Köpek Eğitim Merkezi
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
+            <p className="text-xl text-muted-foreground mb-8 flex items-center justify-center gap-2">
+              <Cat className="w-6 h-6 text-purple-500" />
               Ankara'nın kedi, köpek ve evcil hayvan oteli
+              <Dog className="w-6 h-6 text-orange-500" />
             </p>
-            <Button 
-              size="lg" 
-              className="gap-2"
+            <Button
+              size="lg"
+              className="gap-2 shadow-lg hover:shadow-xl transition-all"
               onClick={handleReservationClick}
             >
+              <PawPrint className="w-5 h-5" />
               Rezervasyon Yap
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -314,11 +361,11 @@ export default function HomePage() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             {stats.map((stat, idx) => (
-              <Card key={idx} className="text-center">
+              <Card key={idx} className="text-center hover:shadow-xl transition-shadow bg-white/80 backdrop-blur">
                 <CardContent className="pt-6">
-                  <stat.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <h3 className="text-3xl font-bold text-primary mb-2">{stat.value}</h3>
-                  <p className="text-muted-foreground">{stat.label}</p>
+                  <stat.icon className={`w-12 h-12 mx-auto mb-4 ${stat.color}`} />
+                  <h3 className={`text-3xl font-bold mb-2 ${stat.color}`}>{stat.value}</h3>
+                  <p className="text-muted-foreground font-medium">{stat.label}</p>
                 </CardContent>
               </Card>
             ))}
@@ -327,20 +374,30 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-b from-white to-orange-50/30">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Neden Petfendy?
-          </h2>
+          <div className="text-center mb-12">
+            <div className="flex justify-center gap-2 mb-4">
+              <PawPrint className="w-8 h-8 text-pink-400" />
+              <Heart className="w-8 h-8 text-pink-500" />
+              <PawPrint className="w-8 h-8 text-purple-400" />
+            </div>
+            <h2 className="text-3xl font-bold text-primary mb-2">
+              Neden Petfendy?
+            </h2>
+            <p className="text-muted-foreground">Kedi ve köpekleriniz için en iyi hizmetler</p>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, idx) => (
-              <Card key={idx} className="text-center hover:shadow-lg transition-shadow">
+              <Card key={idx} className={`text-center hover:shadow-2xl transition-all hover:-translate-y-2 border-2 ${feature.bgColor}`}>
                 <CardHeader>
-                  <feature.icon className="w-12 h-12 mx-auto mb-4 text-primary" />
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                  <div className={`${feature.bgColor} w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4 shadow-lg`}>
+                    <feature.icon className={`w-10 h-10 ${feature.color}`} />
+                  </div>
+                  <CardTitle className="text-lg font-bold">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{feature.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -350,21 +407,30 @@ export default function HomePage() {
 
       {/* Reservation Section */}
       {showReservation && (
-        <section id="reservation-section" className="py-20 bg-gray-50">
+        <section id="reservation-section" className="py-20 bg-gradient-to-b from-purple-50/50 to-orange-50/50">
           <div className="max-w-7xl mx-auto px-4">
-            <h2 className="text-3xl font-bold text-center mb-12">
-              Rezervasyon Yapın
-            </h2>
+            <div className="text-center mb-12">
+              <div className="flex justify-center gap-2 mb-4">
+                <Dog className="w-8 h-8 text-orange-500" />
+                <Heart className="w-8 h-8 text-pink-500" />
+                <Cat className="w-8 h-8 text-purple-500" />
+              </div>
+              <h2 className="text-3xl font-bold text-primary mb-2">
+                Rezervasyon Yapın
+              </h2>
+              <p className="text-muted-foreground">Kedi ve köpeğiniz için en uygun hizmeti seçin</p>
+            </div>
 
             <Tabs defaultValue="hotel" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger value="hotel" className="gap-2">
-                  <Home className="w-4 h-4" />
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-gradient-to-r from-orange-100 to-purple-100 p-1">
+                <TabsTrigger value="hotel" className="gap-2 data-[state=active]:bg-white">
+                  <Dog className="w-5 h-5 text-orange-500" />
+                  <Cat className="w-5 h-5 text-purple-500" />
                   Otel Rezervasyonu
                 </TabsTrigger>
-                <TabsTrigger value="taxi" className="gap-2">
-                  <Car className="w-4 h-4" />
-                  Taksi Rezervasyonu
+                <TabsTrigger value="taxi" className="gap-2 data-[state=active]:bg-white">
+                  <Car className="w-5 h-5 text-blue-500" />
+                  Pet Taksi Rezervasyonu
                 </TabsTrigger>
               </TabsList>
 
@@ -732,21 +798,43 @@ export default function HomePage() {
       )}
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-primary-foreground">
-        <div className="max-w-4xl mx-auto px-4 text-center">
+      <section className="py-20 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 text-white relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-10 left-20 opacity-20">
+          <Cat className="w-40 h-40" />
+        </div>
+        <div className="absolute bottom-10 right-20 opacity-20">
+          <Dog className="w-40 h-40" />
+        </div>
+
+        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
+          <div className="flex justify-center gap-3 mb-6">
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur">
+              <Dog className="w-8 h-8 text-white" />
+            </div>
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur">
+              <Heart className="w-8 h-8 text-white" />
+            </div>
+            <div className="bg-white/20 p-3 rounded-full backdrop-blur">
+              <Cat className="w-8 h-8 text-white" />
+            </div>
+          </div>
           <h2 className="text-3xl font-bold mb-4">
-            Evcil Dostunuz İçin En İyisini Seçin
+            Kedi ve Köpeğiniz İçin En İyisini Seçin
           </h2>
-          <p className="text-lg mb-8 opacity-90">
-            Kafessiz konaklama, profesyonel eğitim ve özenli bakım hizmetlerimiz ile
-            evcil dostlarınız güvende
+          <p className="text-lg mb-8 opacity-95">
+            Kafessiz konaklama, profesyonel köpek eğitimi, özel kedi bakımı ve güvenli pet taksi hizmetlerimiz ile
+            sevimli dostlarınız güvende ve mutlu
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             variant="secondary"
             onClick={handleReservationClick}
+            className="gap-2 shadow-xl hover:shadow-2xl"
           >
+            <PawPrint className="w-5 h-5" />
             Hemen Rezervasyon Yap
+            <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
       </section>
