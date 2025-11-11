@@ -3,34 +3,19 @@
 
 import CryptoJS from 'crypto-js';
 
-// In production, store this in environment variables and rotate regularly
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'petfendy-secret-key-change-in-production-2025';
-
 /**
- * Encrypt sensitive data using AES-256
- * Used for temporary card data encryption (card data should never be stored!)
+ * IMPORTANT: This file contains CLIENT-SIDE utilities only.
+ * Encryption/decryption functions have been moved to lib/server-encryption.ts
+ *
+ * PRD Compliance: No encryption keys exposed to client
+ *
+ * For server-side encryption, import from '@/lib/server-encryption'
  */
-export function encryptData(data: string): string {
-  try {
-    return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
-  } catch (error) {
-    console.error('Encryption error:', error);
-    throw new Error('Veri şifreleme başarısız');
-  }
-}
 
-/**
- * Decrypt sensitive data
- */
-export function decryptData(encryptedData: string): string {
-  try {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
-    return bytes.toString(CryptoJS.enc.Utf8);
-  } catch (error) {
-    console.error('Decryption error:', error);
-    throw new Error('Veri çözme başarısız');
-  }
-}
+// ============================================================================
+// REMOVED FOR SECURITY: encryptData() and decryptData()
+// These functions are now server-side only in lib/server-encryption.ts
+// ============================================================================
 
 /**
  * Mask card number for display (show only last 4 digits)
