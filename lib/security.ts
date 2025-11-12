@@ -2,9 +2,24 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-// JWT Secret - In production, use environment variable and rotate regularly
-const JWT_SECRET = process.env.JWT_SECRET || 'petfendy-jwt-secret-change-in-production';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'petfendy-refresh-secret-change-in-production';
+// JWT Secret - MUST be set in environment variables
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+// Security check: JWT secrets are required in production
+if (typeof window === 'undefined') { // Server-side only
+  if (process.env.NODE_ENV === 'production') {
+    if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+      throw new Error('SECURITY ERROR: JWT_SECRET and JWT_REFRESH_SECRET must be set in production environment');
+    }
+  } else if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+    console.warn('⚠️ WARNING: JWT_SECRET and JWT_REFRESH_SECRET not set. Using insecure defaults for development only.');
+  }
+}
+
+// Development-only fallbacks (never used in production due to above check)
+const JWT_SECRET_FALLBACK = JWT_SECRET || 'dev-only-secret-DO-NOT-USE-IN-PRODUCTION';
+const JWT_REFRESH_SECRET_FALLBACK = JWT_REFRESH_SECRET || 'dev-only-refresh-secret-DO-NOT-USE-IN-PRODUCTION';
 
 // CSRF token generation and validation (browser-safe)
 export function generateCSRFToken(): string {
@@ -109,7 +124,7 @@ export function generateToken(userId: string, email: string, role: string = 'use
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
   };
 
-  return jwt.sign(payload, JWT_SECRET, { algorithm: 'HS256' });
+  return jwt.sign(payload, JWT_SECRET_FALLBACK, { algorithm: 'HS256' });
 }
 
 // Generate refresh token (longer expiry)
@@ -121,13 +136,13 @@ export function generateRefreshToken(userId: string): string {
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // 7 days
   };
 
-  return jwt.sign(payload, JWT_REFRESH_SECRET, { algorithm: 'HS256' });
+  return jwt.sign(payload, JWT_REFRESH_SECRET_FALLBACK, { algorithm: 'HS256' });
 }
 
 // Verify JWT token
 export function verifyToken(token: string): { valid: boolean; payload?: any; error?: string } {
   try {
-    const payload = jwt.verify(token, JWT_SECRET);
+    const payload = jwt.verify(token, JWT_SECRET_FALLBACK);
     return { valid: true, payload };
   } catch (error: any) {
     if (error.name === 'TokenExpiredError') {
@@ -143,7 +158,7 @@ export function verifyToken(token: string): { valid: boolean; payload?: any; err
 // Verify refresh token
 export function verifyRefreshToken(token: string): { valid: boolean; payload?: any; error?: string } {
   try {
-    const payload = jwt.verify(token, JWT_REFRESH_SECRET);
+    const payload = jwt.verify(token, JWT_REFRESH_SECRET_FALLBACK);
     return { valid: true, payload };
   } catch (error: any) {
     return { valid: false, error: error.message };

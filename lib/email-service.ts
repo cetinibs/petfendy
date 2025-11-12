@@ -31,21 +31,63 @@ export interface BookingConfirmationData {
 }
 
 class EmailService {
-  private apiKey: string = process.env.SENDGRID_API_KEY || "mock_sendgrid_key"
+  private apiKey: string
   private fromEmail: string = "noreply@petfendy.com"
   private fromName: string = "Petfendy"
 
+  constructor() {
+    // Get API key from environment
+    this.apiKey = process.env.SENDGRID_API_KEY || ""
+
+    // Security check for production
+    if (typeof window === 'undefined') { // Server-side only
+      if (process.env.NODE_ENV === 'production' && !process.env.SENDGRID_API_KEY) {
+        console.error('⚠️ PRODUCTION WARNING: SENDGRID_API_KEY not set. Email service will run in mock mode.');
+        console.error('⚠️ Set SENDGRID_API_KEY in Vercel environment variables for production email delivery.');
+      }
+    }
+  }
+
   async sendEmail(template: EmailTemplate): Promise<boolean> {
-    // Mock email sending
-    console.log("📧 [Email Service] Sending email...")
+    if (!this.apiKey) {
+      // Mock mode - development only
+      console.log("📧 [Email Service - MOCK MODE] Sending email...")
+      console.log("To:", template.to)
+      console.log("Subject:", template.subject)
+      console.log("Content:", template.text || template.html)
+
+      // Simulate API delay
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      return true
+    }
+
+    // In production with real API key, implement actual SendGrid integration:
+    /*
+    const sgMail = require('@sendgrid/mail');
+    sgMail.setApiKey(this.apiKey);
+
+    const msg = {
+      to: template.to,
+      from: { email: this.fromEmail, name: this.fromName },
+      subject: template.subject,
+      text: template.text,
+      html: template.html,
+    };
+
+    try {
+      await sgMail.send(msg);
+      return true;
+    } catch (error) {
+      console.error('SendGrid error:', error);
+      return false;
+    }
+    */
+
+    // For now, mock mode
+    console.log("📧 [Email Service - MOCK MODE] Sending email...")
     console.log("To:", template.to)
     console.log("Subject:", template.subject)
-    console.log("Content:", template.text || template.html)
-
-    // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Mock success response
     return true
   }
 

@@ -33,9 +33,26 @@ export interface RefundRequest {
 }
 
 class PaymentService {
-  private apiKey: string = process.env.PAYMENT_API_KEY || "mock_payment_key"
-  private merchantId: string = process.env.PAYMENT_MERCHANT_ID || "mock_merchant_123"
-  private isTestMode: boolean = true
+  private apiKey: string
+  private merchantId: string
+  private isTestMode: boolean
+
+  constructor() {
+    // Get credentials from environment
+    this.apiKey = process.env.PAYMENT_API_KEY || ""
+    this.merchantId = process.env.PAYMENT_MERCHANT_ID || ""
+    this.isTestMode = !this.apiKey || !this.merchantId
+
+    // Security check for production
+    if (typeof window === 'undefined') { // Server-side only
+      if (process.env.NODE_ENV === 'production' && this.isTestMode) {
+        console.error('⚠️ PRODUCTION WARNING: PAYMENT_API_KEY and PAYMENT_MERCHANT_ID not set.');
+        console.error('⚠️ Payment service will run in MOCK MODE. Set credentials in Vercel for real payments.');
+      } else if (this.isTestMode) {
+        console.log('💳 [Payment Service] Running in TEST/MOCK MODE for development');
+      }
+    }
+  }
 
   /**
    * İyzico-style payment initialization

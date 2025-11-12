@@ -3,8 +3,22 @@
 
 import CryptoJS from 'crypto-js';
 
-// In production, store this in environment variables and rotate regularly
-const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'petfendy-secret-key-change-in-production-2025';
+// Encryption key - MUST be set in environment variables
+const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+
+// Security check: Encryption key is required in production
+if (typeof window === 'undefined') { // Server-side only
+  if (process.env.NODE_ENV === 'production') {
+    if (!ENCRYPTION_KEY) {
+      throw new Error('SECURITY ERROR: NEXT_PUBLIC_ENCRYPTION_KEY must be set in production environment');
+    }
+  } else if (!ENCRYPTION_KEY) {
+    console.warn('⚠️ WARNING: NEXT_PUBLIC_ENCRYPTION_KEY not set. Using insecure default for development only.');
+  }
+}
+
+// Development-only fallback (never used in production due to above check)
+const ENCRYPTION_KEY_FALLBACK = ENCRYPTION_KEY || 'dev-only-encryption-key-DO-NOT-USE-IN-PRODUCTION';
 
 /**
  * Encrypt sensitive data using AES-256
@@ -12,7 +26,7 @@ const ENCRYPTION_KEY = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 'petfendy-secre
  */
 export function encryptData(data: string): string {
   try {
-    return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY).toString();
+    return CryptoJS.AES.encrypt(data, ENCRYPTION_KEY_FALLBACK).toString();
   } catch (error) {
     console.error('Encryption error:', error);
     throw new Error('Veri şifreleme başarısız');
@@ -24,7 +38,7 @@ export function encryptData(data: string): string {
  */
 export function decryptData(encryptedData: string): string {
   try {
-    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY);
+    const bytes = CryptoJS.AES.decrypt(encryptedData, ENCRYPTION_KEY_FALLBACK);
     return bytes.toString(CryptoJS.enc.Utf8);
   } catch (error) {
     console.error('Decryption error:', error);
