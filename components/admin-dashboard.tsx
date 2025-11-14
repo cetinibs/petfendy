@@ -11,10 +11,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
-import { 
-  Plus, 
-  Trash2, 
-  Edit, 
+import {
+  Plus,
+  Trash2,
+  Edit,
   Hotel,
   Car,
   TrendingUp,
@@ -29,8 +29,10 @@ import {
   ChevronsRight,
   FileSpreadsheet,
   FileText,
-  FileDown
+  FileDown,
+  Settings
 } from "lucide-react"
+import { AdminIntegrations } from "@/components/admin-integrations"
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
@@ -582,12 +584,16 @@ export function AdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders">Siparişler</TabsTrigger>
           <TabsTrigger value="rooms">Odalar</TabsTrigger>
           <TabsTrigger value="services">Taksi</TabsTrigger>
           <TabsTrigger value="pricing">Fiyatlandırma</TabsTrigger>
           <TabsTrigger value="reports">Raporlar</TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-1">
+            <Settings className="h-4 w-4" />
+            Entegrasyonlar
+          </TabsTrigger>
         </TabsList>
 
         {/* Orders Tab */}
@@ -1423,6 +1429,11 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Integrations Tab */}
+        <TabsContent value="integrations">
+          <AdminIntegrations />
         </TabsContent>
       </Tabs>
     </div>

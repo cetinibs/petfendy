@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { TaxiService, CityPricing } from "@/lib/types"
-import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
+import { mockTaxiServices, mockCityPricings } from "@/lib/mock-data"
 import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,36 +10,81 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { getAllCityNames, getDistrictsByCity } from "@/lib/turkey-cities"
+import { calculateDistance, formatLocationString } from "@/lib/maps-service"
+import { Loader2 } from "lucide-react"
 
 export function TaxiBooking() {
   const [services] = useState<TaxiService[]>(mockTaxiServices)
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [fromCity, setFromCity] = useState("")
+  const [fromDistrict, setFromDistrict] = useState("")
   const [toCity, setToCity] = useState("")
+  const [toDistrict, setToDistrict] = useState("")
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [isCalculating, setIsCalculating] = useState(false)
+  const [calculatedDistance, setCalculatedDistance] = useState<number | null>(null)
+  const [calculatedDuration, setCalculatedDuration] = useState<number | null>(null)
 
-  // Calculate distance based on city pairs or use default
+  const cities = getAllCityNames()
+  const fromDistricts = fromCity ? getDistrictsByCity(fromCity) : []
+  const toDistricts = toCity ? getDistrictsByCity(toCity) : []
+
+  // Calculate distance using Google Maps API when cities/districts change
+  useEffect(() => {
+    if (fromCity && toCity) {
+      const origin = formatLocationString(fromCity, fromDistrict)
+      const destination = formatLocationString(toCity, toDistrict)
+
+      setIsCalculating(true)
+      calculateDistance(origin, destination)
+        .then(result => {
+          if (result.status === 'OK') {
+            setCalculatedDistance(result.distance)
+            setCalculatedDuration(result.duration)
+          } else {
+            // Fallback to mock calculation
+            setCalculatedDistance(getDistance())
+            setCalculatedDuration(null)
+          }
+        })
+        .catch(() => {
+          setCalculatedDistance(getDistance())
+          setCalculatedDuration(null)
+        })
+        .finally(() => {
+          setIsCalculating(false)
+        })
+    }
+  }, [fromCity, fromDistrict, toCity, toDistrict])
+
+  // Fallback distance calculation for when API is not available
   const getDistance = (): number => {
     if (!fromCity || !toCity) return 0
-    
+
     // Check if there's a predefined city pricing
     const cityPricing = cityPricings.find(
-      (cp) => 
+      (cp) =>
         (cp.fromCity === fromCity && cp.toCity === toCity) ||
         (cp.fromCity === toCity && cp.toCity === fromCity)
     )
-    
+
     if (cityPricing) {
       return cityPricing.distanceKm
     }
-    
+
     // Default distance for same city or unknown pairs
     if (fromCity === toCity) return 20
     return 100 // Default distance for unknown city pairs
+  }
+
+  // Use calculated distance if available, otherwise use fallback
+  const getFinalDistance = (): number => {
+    return calculatedDistance !== null ? calculatedDistance : getDistance()
   }
 
   const getCityPricing = (): CityPricing | null => {
@@ -54,28 +99,28 @@ export function TaxiBooking() {
 
   const calculatePrice = (): number => {
     if (!selectedService || !fromCity || !toCity) return 0
-    
-    const distance = getDistance()
+
+    const distance = getFinalDistance()
     const cityPricing = getCityPricing()
-    
+
     // Calculate base price: basePrice + (distance * pricePerKm)
     let totalPrice = selectedService.basePrice + (selectedService.pricePerKm * distance)
-    
+
     // Apply round trip multiplier (2x for return journey)
     if (isRoundTrip) {
       totalPrice *= 2
     }
-    
+
     // Apply city-specific additional fees
     if (cityPricing) {
       totalPrice += cityPricing.additionalFee
-      
+
       // Apply discount if available
       if (cityPricing.discount > 0) {
         totalPrice -= (totalPrice * cityPricing.discount) / 100
       }
     }
-    
+
     return totalPrice
   }
 
@@ -98,10 +143,13 @@ export function TaxiBooking() {
       return
     }
 
-    const distance = getDistance()
+    const distance = getFinalDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
+
+    const pickupLocation = fromDistrict ? `${fromDistrict}, ${fromCity}` : fromCity
+    const dropoffLocation = toDistrict ? `${toDistrict}, ${toCity}` : toCity
+
     const cartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
@@ -110,8 +158,8 @@ export function TaxiBooking() {
       price,
       details: {
         serviceName: selectedService.name,
-        pickupLocation: fromCity,
-        dropoffLocation: toCity,
+        pickupLocation,
+        dropoffLocation,
         distance,
         scheduledDate,
         isRoundTrip,
@@ -119,6 +167,7 @@ export function TaxiBooking() {
         pricePerKm: selectedService.pricePerKm,
         additionalFee: cityPricing?.additionalFee || 0,
         discount: cityPricing?.discount || 0,
+        duration: calculatedDuration || undefined,
       },
     }
 
@@ -126,9 +175,13 @@ export function TaxiBooking() {
     setSuccess(`${selectedService.name} sepete eklendi!`)
     setSelectedService(null)
     setFromCity("")
+    setFromDistrict("")
     setToCity("")
+    setToDistrict("")
     setIsRoundTrip(false)
     setScheduledDate("")
+    setCalculatedDistance(null)
+    setCalculatedDuration(null)
   }
 
   return (
@@ -183,36 +236,80 @@ export function TaxiBooking() {
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Kalkış Şehri</label>
-              <select
-                value={fromCity}
-                onChange={(e) => setFromCity(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="">Şehir seçin</option>
-                {mockTurkishCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İli</label>
+                <select
+                  value={fromCity}
+                  onChange={(e) => {
+                    setFromCity(e.target.value)
+                    setFromDistrict("")
+                  }}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İl seçin</option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İlçesi (Opsiyonel)</label>
+                <select
+                  value={fromDistrict}
+                  onChange={(e) => setFromDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  disabled={!fromCity}
+                >
+                  <option value="">Merkez / İlçe seçin</option>
+                  {fromDistricts.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Varış Şehri</label>
-              <select
-                value={toCity}
-                onChange={(e) => setToCity(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="">Şehir seçin</option>
-                {mockTurkishCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İli</label>
+                <select
+                  value={toCity}
+                  onChange={(e) => {
+                    setToCity(e.target.value)
+                    setToDistrict("")
+                  }}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İl seçin</option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İlçesi (Opsiyonel)</label>
+                <select
+                  value={toDistrict}
+                  onChange={(e) => setToDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  disabled={!toCity}
+                >
+                  <option value="">Merkez / İlçe seçin</option>
+                  {toDistricts.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
@@ -229,20 +326,37 @@ export function TaxiBooking() {
 
             {fromCity && toCity && (
               <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Mesafe:</span>
-                  <span className="font-semibold">{getDistance()} km</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Başlangıç Ücreti:</span>
-                  <span className="font-semibold">₺{selectedService.basePrice}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Mesafe Ücreti ({getDistance()} km):</span>
-                  <span className="font-semibold">
-                    ₺{(selectedService.pricePerKm * getDistance()).toFixed(2)}
-                  </span>
-                </div>
+                {isCalculating ? (
+                  <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Mesafe hesaplanıyor...
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Mesafe:</span>
+                      <span className="font-semibold">{getFinalDistance()} km</span>
+                    </div>
+                    {calculatedDuration && (
+                      <div className="flex justify-between text-sm text-blue-600">
+                        <span>Tahmini Süre:</span>
+                        <span className="font-semibold">
+                          {Math.floor(calculatedDuration / 60)}s {calculatedDuration % 60}dk
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span>Başlangıç Ücreti:</span>
+                      <span className="font-semibold">₺{selectedService.basePrice}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Mesafe Ücreti ({getFinalDistance()} km):</span>
+                      <span className="font-semibold">
+                        ₺{(selectedService.pricePerKm * getFinalDistance()).toFixed(2)}
+                      </span>
+                    </div>
+                  </>
+                )}
                 {isRoundTrip && (
                   <div className="flex justify-between text-sm text-blue-600">
                     <span>Gidiş-Dönüş:</span>

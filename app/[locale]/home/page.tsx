@@ -292,23 +292,87 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
+      <section className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-100 py-20">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-12">
-            <h1 className="text-4xl sm:text-5xl font-bold text-primary mb-4">
-              Petfendy Evcil Hayvan Oteli Ve Köpek Eğitim Merkezi
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+              <PawPrint className="w-5 h-5 text-primary" />
+              <span className="text-sm font-semibold text-primary">Ankara'nın En Güvenilir Pet Hizmeti</span>
+            </div>
+            <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 mb-4">
+              <span className="text-primary">Petfendy</span> Evcil Hayvan Oteli
             </h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Ankara'nın kedi, köpek ve evcil hayvan oteli
+            <p className="text-xl sm:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto">
+              Evcil dostlarınız için <span className="font-semibold text-primary">otel konaklama</span> ve
+              <span className="font-semibold text-primary"> güvenli ulaşım</span> hizmetleri
             </p>
-            <Button 
-              size="lg" 
-              className="gap-2"
-              onClick={handleReservationClick}
-            >
-              Rezervasyon Yap
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+
+            {/* Main Service Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
+              <Card className="border-2 border-primary/20 hover:border-primary hover:shadow-xl transition-all cursor-pointer bg-white/80 backdrop-blur"
+                onClick={() => {
+                  setShowReservation(true)
+                  setTimeout(() => {
+                    const element = document.getElementById('reservation-section')
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' })
+                      // Then switch to hotel tab
+                      setTimeout(() => {
+                        const hotelTab = document.querySelector('[value="hotel"]') as HTMLElement
+                        hotelTab?.click()
+                      }, 500)
+                    }
+                  }, 100)
+                }}>
+                <CardHeader className="pb-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Home className="w-8 h-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">🏨 Pet Otel</CardTitle>
+                  <CardDescription className="text-base">
+                    Kafessiz konaklama, 7/24 bakım ve veteriner desteği
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" size="lg">
+                    Otel Rezervasyonu Yap
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-primary/20 hover:border-primary hover:shadow-xl transition-all cursor-pointer bg-white/80 backdrop-blur"
+                onClick={() => {
+                  setShowReservation(true)
+                  setTimeout(() => {
+                    const element = document.getElementById('reservation-section')
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth' })
+                      // Then switch to taxi tab
+                      setTimeout(() => {
+                        const taxiTab = document.querySelector('[value="taxi"]') as HTMLElement
+                        taxiTab?.click()
+                      }, 500)
+                    }
+                  }, 100)
+                }}>
+                <CardHeader className="pb-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Car className="w-8 h-8 text-primary" />
+                  </div>
+                  <CardTitle className="text-2xl">🚗 Pet Taksi</CardTitle>
+                  <CardDescription className="text-base">
+                    İlden ile güvenli hayvan taşıma hizmeti
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" size="lg" variant="outline">
+                    Taksi Rezervasyonu Yap
+                    <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Stats */}
