@@ -1,17 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import type { TaxiService, CityPricing } from "@/lib/types"
+import type { TaxiService, CityPricing, CartItem } from "@/lib/types"
 import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { DirectBookingPaymentModal } from "./direct-booking-payment-modal"
+import { useAuth } from "./auth-context"
+import { useRouter } from "next/navigation"
+import { toast } from "@/components/ui/use-toast"
 
 export function TaxiBooking() {
+  const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
   const [services] = useState<TaxiService[]>(mockTaxiServices)
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -21,6 +26,8 @@ export function TaxiBooking() {
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [bookingItem, setBookingItem] = useState<CartItem | null>(null)
 
   // Calculate distance based on city pairs or use default
   const getDistance = (): number => {
@@ -83,6 +90,19 @@ export function TaxiBooking() {
     setError("")
     setSuccess("")
 
+    // Check authentication
+    if (!isAuthenticated) {
+      toast({
+        title: "Giriş Gerekli",
+        description: "Rezervasyon yapmak için giriş yapmanız gerekiyor.",
+        duration: 3000,
+      })
+      setTimeout(() => {
+        router.push('/tr') // Redirect to login page
+      }, 1500)
+      return
+    }
+
     if (!selectedService) {
       setError("Lütfen bir taksi hizmeti seçin")
       return
@@ -101,8 +121,8 @@ export function TaxiBooking() {
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
-    const cartItem = {
+
+    const cartItem: CartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
       itemId: selectedService.id,
@@ -122,13 +142,25 @@ export function TaxiBooking() {
       },
     }
 
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepete eklendi!`)
+    setBookingItem(cartItem)
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = () => {
+    setSuccess("Rezervasyonunuz başarıyla oluşturuldu!")
+    toast({
+      title: "✅ Rezervasyon Başarılı!",
+      description: "Rezervasyonunuz oluşturuldu. Bilgiler e-posta adresinize gönderildi.",
+      duration: 5000,
+    })
+
     setSelectedService(null)
     setFromCity("")
     setToCity("")
     setIsRoundTrip(false)
     setScheduledDate("")
+    setBookingItem(null)
+    setShowPaymentModal(false)
   }
 
   return (
@@ -271,10 +303,22 @@ export function TaxiBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              Sepete Ekle
+              Rezervasyon Yap
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {bookingItem && (
+        <DirectBookingPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          bookingItem={bookingItem}
+          userEmail={user?.email || ""}
+          userName={user?.name || ""}
+          userId={user?.id}
+        />
       )}
     </div>
   )

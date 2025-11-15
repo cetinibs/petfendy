@@ -12,17 +12,17 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
-import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import type { HotelRoom, TaxiService, CartItem } from "@/lib/types"
+import { DirectBookingPaymentModal } from "@/components/direct-booking-payment-modal"
+import { useAuth } from "@/components/auth-context"
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
-  ShoppingCart,
   ChevronRight,
   PawPrint,
   Heart,
@@ -36,14 +36,15 @@ export default function HomePage() {
   const t = useTranslations('hotel')
   const tCommon = useTranslations('common')
   const router = useRouter()
-  
+  const { user, isAuthenticated } = useAuth()
+
   // Hotel states
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
   const [checkOutDate, setCheckOutDate] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
-  
+
   // Taxi states
   const [taxiServices] = useState<TaxiService[]>(mockTaxiServices)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -54,25 +55,17 @@ export default function HomePage() {
   const [pickupDate, setPickupDate] = useState("")
   const [pickupTime, setPickupTime] = useState("")
   const [petCount, setPetCount] = useState(1)
-  
+
   // Common states
   const [showReservation, setShowReservation] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [cartItemCount, setCartItemCount] = useState(0)
-  
-  // Update cart count
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const updateCount = () => {
-        setCartItemCount(getCart().length)
-      }
-      updateCount()
-      
-      window.addEventListener('cartUpdated', updateCount)
-      return () => window.removeEventListener('cartUpdated', updateCount)
-    }
-  }, [])
+
+  // Payment modal states
+  const [showHotelPaymentModal, setShowHotelPaymentModal] = useState(false)
+  const [showTaxiPaymentModal, setShowTaxiPaymentModal] = useState(false)
+  const [hotelBookingItem, setHotelBookingItem] = useState<CartItem | null>(null)
+  const [taxiBookingItem, setTaxiBookingItem] = useState<CartItem | null>(null)
 
   const stats = [
     { icon: Users, label: "Misafir Edilen Dostlar", value: "1000+" },
@@ -126,6 +119,19 @@ export default function HomePage() {
     setError("")
     setSuccess("")
 
+    // Check authentication
+    if (!isAuthenticated) {
+      toast({
+        title: "Giriş Gerekli",
+        description: "Rezervasyon yapmak için giriş yapmanız gerekiyor.",
+        duration: 3000,
+      })
+      setTimeout(() => {
+        router.push('/tr') // Redirect to login page
+      }, 1500)
+      return
+    }
+
     if (!selectedRoom) {
       setError(t('selectRoomError'))
       return
@@ -147,7 +153,7 @@ export default function HomePage() {
     const nights = calculateNights()
     const total = calculateTotal()
 
-    const cartItem = {
+    const cartItem: CartItem = {
       id: `hotel-${Date.now()}`,
       type: "hotel" as const,
       itemId: selectedRoom.id,
@@ -162,15 +168,24 @@ export default function HomePage() {
       },
     }
 
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
+    setHotelBookingItem(cartItem)
+    setShowHotelPaymentModal(true)
+  }
+
+  const handleHotelPaymentSuccess = () => {
+    setSuccess("Rezervasyonunuz başarıyla oluşturuldu!")
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
-      duration: 3000,
+      title: "✅ Rezervasyon Başarılı!",
+      description: "Rezervasyonunuz oluşturuldu. Bilgiler e-posta adresinize gönderildi.",
+      duration: 5000,
     })
+
+    setSelectedRoom(null)
+    setCheckInDate("")
+    setCheckOutDate("")
+    setSpecialRequests("")
+    setHotelBookingItem(null)
+    setShowHotelPaymentModal(false)
   }
 
   const calculateDistance = (): number => {
@@ -196,6 +211,19 @@ export default function HomePage() {
     setError("")
     setSuccess("")
 
+    // Check authentication
+    if (!isAuthenticated) {
+      toast({
+        title: "Giriş Gerekli",
+        description: "Rezervasyon yapmak için giriş yapmanız gerekiyor.",
+        duration: 3000,
+      })
+      setTimeout(() => {
+        router.push('/tr') // Redirect to login page
+      }, 1500)
+      return
+    }
+
     if (!selectedService) {
       setError("Lütfen bir taksi servisi seçin")
       return
@@ -219,7 +247,7 @@ export default function HomePage() {
     const distance = calculateDistance()
     const total = calculateTaxiTotal()
 
-    const cartItem = {
+    const cartItem: CartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
       itemId: selectedService.id,
@@ -239,15 +267,28 @@ export default function HomePage() {
       },
     }
 
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepetinize eklendi`)
-    
-    // Show toast notification
+    setTaxiBookingItem(cartItem)
+    setShowTaxiPaymentModal(true)
+  }
+
+  const handleTaxiPaymentSuccess = () => {
+    setSuccess("Rezervasyonunuz başarıyla oluşturuldu!")
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedService.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
-      duration: 3000,
+      title: "✅ Rezervasyon Başarılı!",
+      description: "Rezervasyonunuz oluşturuldu. Bilgiler e-posta adresinize gönderildi.",
+      duration: 5000,
     })
+
+    setSelectedService(null)
+    setPickupCity("")
+    setDropoffCity("")
+    setPickupLocation("")
+    setDropoffLocation("")
+    setPickupDate("")
+    setPickupTime("")
+    setPetCount(1)
+    setTaxiBookingItem(null)
+    setShowTaxiPaymentModal(false)
   }
 
   return (
@@ -273,17 +314,6 @@ export default function HomePage() {
           </div>
           
           <div className="flex gap-2 items-center">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => router.push('/tr')}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline">Sepet</span>
-              {cartItemCount > 0 && (
-                <Badge variant="destructive" className="ml-1">{cartItemCount}</Badge>
-              )}
-            </Button>
             <Button onClick={() => router.push('/tr')}>
               Giriş Yap
             </Button>
@@ -489,17 +519,17 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      <Button 
-                        onClick={handleAddHotelToCart} 
-                        className="w-full" 
+                      <Button
+                        onClick={handleAddHotelToCart}
+                        className="w-full"
                         size="lg"
                         disabled={!checkInDate || !checkOutDate}
                       >
-                        {t('addToCart')}
+                        Rezervasyon Yap
                       </Button>
-                      
+
                       <p className="text-xs text-center text-muted-foreground">
-                        Rezervasyonu tamamlamak için giriş yapmanız gerekecektir
+                        Rezervasyon yapmak için giriş yapmanız gerekecektir
                       </p>
                     </CardContent>
                   </Card>
@@ -710,17 +740,17 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      <Button 
-                        onClick={handleAddTaxiToCart} 
-                        className="w-full" 
+                      <Button
+                        onClick={handleAddTaxiToCart}
+                        className="w-full"
                         size="lg"
                         disabled={!pickupCity || !dropoffCity || !pickupLocation || !dropoffLocation || !pickupDate || !pickupTime}
                       >
-                        Sepete Ekle
+                        Rezervasyon Yap
                       </Button>
-                      
+
                       <p className="text-xs text-center text-muted-foreground">
-                        Rezervasyonu tamamlamak için giriş yapmanız gerekecektir
+                        Rezervasyon yapmak için giriş yapmanız gerekecektir
                       </p>
                     </CardContent>
                   </Card>
@@ -788,6 +818,31 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* Payment Modals */}
+      {hotelBookingItem && (
+        <DirectBookingPaymentModal
+          isOpen={showHotelPaymentModal}
+          onClose={() => setShowHotelPaymentModal(false)}
+          onSuccess={handleHotelPaymentSuccess}
+          bookingItem={hotelBookingItem}
+          userEmail={user?.email || ""}
+          userName={user?.name || ""}
+          userId={user?.id}
+        />
+      )}
+
+      {taxiBookingItem && (
+        <DirectBookingPaymentModal
+          isOpen={showTaxiPaymentModal}
+          onClose={() => setShowTaxiPaymentModal(false)}
+          onSuccess={handleTaxiPaymentSuccess}
+          bookingItem={taxiBookingItem}
+          userEmail={user?.email || ""}
+          userName={user?.name || ""}
+          userId={user?.id}
+        />
+      )}
     </div>
   )
 }

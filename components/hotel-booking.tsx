@@ -1,18 +1,22 @@
 "use client"
 
 import { useState } from "react"
-import type { HotelRoom } from "@/lib/types"
+import type { HotelRoom, CartItem } from "@/lib/types"
 import { mockHotelRooms } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTranslations } from 'next-intl';
 import { toast } from "@/components/ui/use-toast"
+import { DirectBookingPaymentModal } from "./direct-booking-payment-modal"
+import { useAuth } from "./auth-context"
+import { useRouter } from "next/navigation"
 
 export function HotelBooking() {
   const t = useTranslations('hotel');
+  const { user, isAuthenticated } = useAuth()
+  const router = useRouter()
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
@@ -20,6 +24,8 @@ export function HotelBooking() {
   const [specialRequests, setSpecialRequests] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [bookingItem, setBookingItem] = useState<CartItem | null>(null)
 
   const calculateNights = (): number => {
     if (!checkInDate || !checkOutDate) return 0
@@ -36,6 +42,19 @@ export function HotelBooking() {
   const handleBooking = () => {
     setError("")
     setSuccess("")
+
+    // Check authentication
+    if (!isAuthenticated) {
+      toast({
+        title: "Giriş Gerekli",
+        description: "Rezervasyon yapmak için giriş yapmanız gerekiyor.",
+        duration: 3000,
+      })
+      setTimeout(() => {
+        router.push('/tr') // Redirect to login page
+      }, 1500)
+      return
+    }
 
     if (!selectedRoom) {
       setError(t('selectRoomError'))
@@ -58,7 +77,7 @@ export function HotelBooking() {
     const nights = calculateNights()
     const total = calculateTotal()
 
-    const cartItem = {
+    const cartItem: CartItem = {
       id: `hotel-${Date.now()}`,
       type: "hotel" as const,
       itemId: selectedRoom.id,
@@ -73,20 +92,24 @@ export function HotelBooking() {
       },
     }
 
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
+    setBookingItem(cartItem)
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = () => {
+    setSuccess("Rezervasyonunuz başarıyla oluşturuldu!")
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Toplam: ₺${total}`,
-      duration: 3000,
+      title: "✅ Rezervasyon Başarılı!",
+      description: "Rezervasyonunuz oluşturuldu. Bilgiler e-posta adresinize gönderildi.",
+      duration: 5000,
     })
-    
+
     setSelectedRoom(null)
     setCheckInDate("")
     setCheckOutDate("")
     setSpecialRequests("")
+    setBookingItem(null)
+    setShowPaymentModal(false)
   }
 
   return (
@@ -183,10 +206,22 @@ export function HotelBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              {t('addToCart')}
+              Rezervasyon Yap
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {bookingItem && (
+        <DirectBookingPaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          bookingItem={bookingItem}
+          userEmail={user?.email || ""}
+          userName={user?.name || ""}
+          userId={user?.id}
+        />
       )}
     </div>
   )
