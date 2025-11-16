@@ -146,3 +146,47 @@ export interface Invoice {
   dueDate: Date
   status: "draft" | "sent" | "paid" | "overdue"
 }
+
+// Blog post interface
+export interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  content: string
+  excerpt: string
+  featuredImage: string
+  author: string
+  authorId: string
+  category: string
+  tags: string[]
+  status: "draft" | "published"
+  publishedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+  viewCount: number
+}
+
+// Gallery image interface
+export interface GalleryImage {
+  id: string
+  title: string
+  description: string
+  imageUrl: string
+  category: string
+  order: number
+  uploadedBy: string
+  uploadedAt: Date
+  isActive: boolean
+}
+
+// FAQ interface
+export interface FAQ {
+  id: string
+  question: string
+  answer: string
+  category: string
+  order: number
+  isActive: boolean
+  createdAt: Date
+  updatedAt: Date
+}

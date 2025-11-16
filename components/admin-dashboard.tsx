@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react"
 import type { Order, HotelRoom, TaxiService, RoomPricing } from "@/lib/types"
 import { mockHotelRooms, mockTaxiServices } from "@/lib/mock-data"
+import BlogManagement from "@/components/blog-management"
+import GalleryManagement from "@/components/gallery-management"
+import FAQManagement from "@/components/faq-management"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -582,12 +585,15 @@ export function AdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="orders">Siparişler</TabsTrigger>
           <TabsTrigger value="rooms">Odalar</TabsTrigger>
           <TabsTrigger value="services">Taksi</TabsTrigger>
           <TabsTrigger value="pricing">Fiyatlandırma</TabsTrigger>
           <TabsTrigger value="reports">Raporlar</TabsTrigger>
+          <TabsTrigger value="blog">Blog</TabsTrigger>
+          <TabsTrigger value="gallery">Galeri</TabsTrigger>
+          <TabsTrigger value="faq">SSS</TabsTrigger>
         </TabsList>
 
         {/* Orders Tab */}
@@ -1423,6 +1429,21 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Blog Tab */}
+        <TabsContent value="blog" className="space-y-4">
+          <BlogManagement />
+        </TabsContent>
+
+        {/* Gallery Tab */}
+        <TabsContent value="gallery" className="space-y-4">
+          <GalleryManagement />
+        </TabsContent>
+
+        {/* FAQ Tab */}
+        <TabsContent value="faq" className="space-y-4">
+          <FAQManagement />
         </TabsContent>
       </Tabs>
     </div>

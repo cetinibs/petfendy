@@ -15,10 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
@@ -29,8 +29,16 @@ import {
   Shield,
   Car,
   MapPin,
-  Clock
+  Clock,
+  Menu
 } from "lucide-react"
+import Link from "next/link"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export default function HomePage() {
   const t = useTranslations('hotel')
@@ -256,14 +264,16 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <Image
-              src="/petfendy-logo.svg"
-              alt="Petfendy Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
-              priority
-            />
+            <Link href="/tr/home">
+              <Image
+                src="/petfendy-logo.svg"
+                alt="Petfendy Logo"
+                width={48}
+                height={48}
+                className="w-12 h-12 cursor-pointer"
+                priority
+              />
+            </Link>
             <div>
               <h1 className="text-xl font-bold text-primary">PETFENDY</h1>
               <p className="text-xs text-muted-foreground hidden sm:block">
@@ -271,10 +281,79 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-6">
+            <Link href="/tr/home" className="text-sm font-medium hover:text-primary transition-colors">
+              Ana Sayfa
+            </Link>
+            <Link href="/tr/hakkimda" className="text-sm font-medium hover:text-primary transition-colors">
+              Hakkımızda
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="text-sm font-medium hover:text-primary transition-colors">
+                Hizmetlerimiz
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <Link href="/tr/hizmetlerimiz">Pet Otel</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/tr/hizmetlerimiz">Pet Taksi</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/tr/hizmetlerimiz">Köpek Eğitimi</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/tr/hizmetlerimiz">Pet Kuaför</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link href="/tr/blog" className="text-sm font-medium hover:text-primary transition-colors">
+              Blog
+            </Link>
+            <Link href="/tr/galeri" className="text-sm font-medium hover:text-primary transition-colors">
+              Galeri
+            </Link>
+            <Link href="/tr/sikca-sorulan-sorular" className="text-sm font-medium hover:text-primary transition-colors">
+              SSS
+            </Link>
+          </nav>
+
           <div className="flex gap-2 items-center">
-            <Button 
-              variant="outline" 
+            {/* Mobile Navigation Menu */}
+            <div className="lg:hidden">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/home">Ana Sayfa</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/hakkimda">Hakkımızda</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/hizmetlerimiz">Hizmetlerimiz</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/blog">Blog</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/galeri">Galeri</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/tr/sikca-sorulan-sorular">SSS</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            <Button
+              variant="outline"
               className="gap-2"
               onClick={() => router.push('/tr')}
             >
