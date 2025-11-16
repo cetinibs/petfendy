@@ -1,0 +1,15 @@
+node_modules
+.git
+.env.local
+.env*.local
+*.log
+.DS_Store
+.vscode
+.idea
+*.md
+!README.md
+HANDOVER.md
+SECURITY.md
+SECURITY-SUMMARY.md
+prd.md
+erd.md
