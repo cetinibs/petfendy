@@ -184,9 +184,38 @@ CVV: 123
 
 ## 📦 Production Deployment
 
-### Checklist
+### Vercel Deployment
+
+Bu proje Vercel'de deploy edilmiştir. Yeni deployment için:
+
+1. **Vercel'e Deploy Edin**
+```bash
+# Vercel CLI ile
+vercel --prod
+
+# veya GitHub entegrasyonu ile otomatik
+git push origin main
+```
+
+2. **Environment Variables Ayarlayın**
+Vercel Dashboard > Project Settings > Environment Variables'dan ekleyin:
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+- `NEXT_PUBLIC_ENCRYPTION_KEY`
+- `PAYMENT_API_KEY`
+- `PAYMENT_MERCHANT_ID`
+- `PAYMENT_GATEWAY_SECRET`
+- `SENDGRID_API_KEY`
+
+3. **Build Settings (Vercel)**
+- Build Command: `npm run build`
+- Install Command: `npm install --legacy-peer-deps`
+- Output Directory: `.next`
+- Node Version: 18.x
+
+### Deployment Checklist
 - [ ] Environment variables güvenli değerlerle ayarlandı
-- [ ] HTTPS sertifikası yüklendi
+- [ ] HTTPS sertifikası yüklendi (Vercel otomatik sağlar)
 - [ ] Payment gateway production keys eklendi
 - [ ] Email service konfigüre edildi
 - [ ] Rate limiting production values ayarlandı
@@ -194,7 +223,7 @@ CVV: 123
 - [ ] Backup stratejisi hazır
 - [ ] Security audit yapıldı
 
-### Deployment Komutları
+### Manuel Deployment
 ```bash
 npm run build
 npm start
