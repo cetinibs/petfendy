@@ -97,14 +97,14 @@ export default function Home() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             {/* Logo */}
-            <div className="flex justify-center mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push(`/${locale}/home`)}>
+            <div className="flex justify-center mb-6 cursor-pointer hover:scale-105 transition-transform duration-300" onClick={() => router.push(`/${locale}/home`)}>
               <Image
-                src="/petfendy-logo.svg"
+                src="https://i0.wp.com/petfendy.com/wp-content/uploads/2024/04/Logo.jpg?resize=2000%2C1400&ssl=1"
                 alt="Petfendy Logo"
-                width={160}
-                height={160}
-                sizes="(max-width: 640px) 8rem, 10rem"
-                className="w-32 h-32 sm:w-40 sm:h-40"
+                width={400}
+                height={280}
+                sizes="(max-width: 640px) 280px, 400px"
+                className="w-70 h-auto sm:w-96 rounded-xl shadow-2xl"
                 priority
               />
             </div>
@@ -175,16 +175,16 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <div 
-              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            <div
+              className="flex items-center gap-3 cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={() => router.push(`/${locale}/home`)}
             >
               <Image
-                src="/petfendy-logo.svg"
+                src="https://i0.wp.com/petfendy.com/wp-content/uploads/2024/04/Logo.jpg?resize=2000%2C1400&ssl=1"
                 alt="Petfendy Logo"
-                width={64}
-                height={64}
-                className="h-12 w-12 sm:h-16 sm:w-16"
+                width={100}
+                height={70}
+                className="h-14 w-20 sm:h-16 sm:w-24 rounded-lg shadow-lg object-cover"
                 priority
               />
             </div>
