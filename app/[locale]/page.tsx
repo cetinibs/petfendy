@@ -93,20 +93,37 @@ export default function Home() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Decorative paw prints */}
+        <div className="absolute top-10 left-10 opacity-5">
+          <PawPrint className="w-32 h-32 text-primary animate-pulse" />
+        </div>
+        <div className="absolute bottom-10 right-10 opacity-5">
+          <PawPrint className="w-24 h-24 text-secondary animate-pulse" style={{ animationDelay: '0.5s' }} />
+        </div>
+
+        <div className="w-full max-w-md relative z-10">
           <div className="text-center mb-8">
             {/* Logo */}
-            <div className="flex justify-center mb-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => router.push(`/${locale}/home`)}>
-              <Image
-                src="/petfendy-logo.svg"
-                alt="Petfendy Logo"
-                width={160}
-                height={160}
-                sizes="(max-width: 640px) 8rem, 10rem"
-                className="w-32 h-32 sm:w-40 sm:h-40"
-                priority
-              />
+            <div className="flex justify-center mb-4 cursor-pointer group transition-all" onClick={() => router.push(`/${locale}/home`)}>
+              <div className="relative">
+                <Image
+                  src="/petfendy-logo.svg"
+                  alt="Petfendy Logo"
+                  width={160}
+                  height={160}
+                  sizes="(max-width: 640px) 8rem, 10rem"
+                  className="w-32 h-32 sm:w-40 sm:h-40 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300"
+                  priority
+                />
+                <PawPrint className="absolute -bottom-2 -right-2 w-8 h-8 text-primary animate-bounce" />
+              </div>
+            </div>
+
+            <div className="flex justify-center gap-2 mb-4">
+              <PawPrint className="w-6 h-6 text-primary animate-bounce" />
+              <PawPrint className="w-6 h-6 text-secondary animate-bounce" style={{ animationDelay: '0.2s' }} />
+              <PawPrint className="w-6 h-6 text-accent animate-bounce" style={{ animationDelay: '0.4s' }} />
             </div>
             
             {/* Language Selector */}
@@ -171,29 +188,33 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-primary text-primary-foreground shadow-lg">
+      <header className="bg-gradient-to-r from-primary via-secondary to-accent text-white shadow-2xl sticky top-0 z-50 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <div 
-              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            <div
+              className="flex items-center gap-3 cursor-pointer group transition-all duration-300"
               onClick={() => router.push(`/${locale}/home`)}
             >
-              <Image
-                src="/petfendy-logo.svg"
-                alt="Petfendy Logo"
-                width={64}
-                height={64}
-                className="h-12 w-12 sm:h-16 sm:w-16"
-                priority
-              />
+              <div className="relative">
+                <Image
+                  src="/petfendy-logo.svg"
+                  alt="Petfendy Logo"
+                  width={64}
+                  height={64}
+                  className="h-12 w-12 sm:h-16 sm:w-16 transition-transform group-hover:scale-110 group-hover:rotate-6 duration-300"
+                  priority
+                />
+                <PawPrint className="absolute -bottom-1 -right-1 w-5 h-5 text-white animate-bounce" />
+              </div>
             </div>
 
             {/* Right Side Actions */}
             <div className="flex gap-2 items-center">
               {/* User Welcome */}
-              <div className="hidden md:block text-right mr-2">
-                <p className="text-sm opacity-90">{t('home.welcomeMessage', { name: user?.name })}</p>
+              <div className="hidden md:flex items-center gap-2 text-right mr-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
+                <User className="w-4 h-4" />
+                <p className="text-sm font-medium">{t('home.welcomeMessage', { name: user?.name })}</p>
               </div>
 
               {/* Language Selector */}
@@ -215,7 +236,12 @@ export default function Home() {
               </DropdownMenu>
 
               {/* Logout Button */}
-              <Button variant="outline" onClick={logout} className="gap-2 bg-transparent" size="sm">
+              <Button
+                variant="outline"
+                onClick={logout}
+                className="gap-2 bg-white/10 border-white/20 hover:bg-white/20 hover:scale-105 transition-all"
+                size="sm"
+              >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('common.logout')}</span>
               </Button>
@@ -227,40 +253,64 @@ export default function Home() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 overflow-x-auto">
-            <TabsTrigger value="hotel" className="text-xs sm:text-sm">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 overflow-x-auto bg-gradient-to-r from-primary/5 via-secondary/5 to-accent/5 p-2 h-auto gap-1">
+            <TabsTrigger
+              value="hotel"
+              className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               {t('tabs.hotel')}
             </TabsTrigger>
-            <TabsTrigger value="taxi" className="text-xs sm:text-sm">
+            <TabsTrigger
+              value="taxi"
+              className="text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               {t('tabs.taxi')}
             </TabsTrigger>
-            <TabsTrigger value="pets" className="gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="pets"
+              className="gap-1 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               <PawPrint className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('tabs.pets')}</span>
             </TabsTrigger>
-            <TabsTrigger value="cart" className="gap-1 text-xs sm:text-sm relative">
+            <TabsTrigger
+              value="cart"
+              className="gap-1 text-xs sm:text-sm relative data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('tabs.cart')}</span>
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold animate-pulse shadow-lg">
                   {cartCount}
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="invoices" className="gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="invoices"
+              className="gap-1 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('tabs.invoices')}</span>
             </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="reports"
+              className="gap-1 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('tabs.reports')}</span>
             </TabsTrigger>
-            <TabsTrigger value="profile" className="gap-1 text-xs sm:text-sm">
+            <TabsTrigger
+              value="profile"
+              className="gap-1 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+            >
               <User className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="hidden sm:inline">{t('tabs.profile')}</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="gap-1 text-xs sm:text-sm">
+              <TabsTrigger
+                value="admin"
+                className="gap-1 text-xs sm:text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-secondary data-[state=active]:text-white transition-all"
+              >
                 <LayoutDashboard className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="hidden sm:inline">{t('tabs.admin')}</span>
               </TabsTrigger>
