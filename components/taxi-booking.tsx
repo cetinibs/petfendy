@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import type { TaxiService, CityPricing } from "@/lib/types"
-import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
+import { mockTaxiServices, mockCityPricings, mockTurkishCities, mockTurkishCitiesWithDistricts } from "@/lib/mock-data"
 import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,11 +16,18 @@ export function TaxiBooking() {
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
   const [fromCity, setFromCity] = useState("")
+  const [fromDistrict, setFromDistrict] = useState("")
   const [toCity, setToCity] = useState("")
+  const [toDistrict, setToDistrict] = useState("")
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+
+  // Get districts for selected city
+  const getDistrictsForCity = (city: string): string[] => {
+    return mockTurkishCitiesWithDistricts[city] || []
+  }
 
   // Calculate distance based on city pairs or use default
   const getDistance = (): number => {
@@ -89,7 +96,12 @@ export function TaxiBooking() {
     }
 
     if (!fromCity || !toCity) {
-      setError("Lütfen kalkış ve varış şehirlerini seçin")
+      setError("Lütfen kalkış ve varış illerini seçin")
+      return
+    }
+
+    if (!fromDistrict || !toDistrict) {
+      setError("Lütfen kalkış ve varış ilçelerini seçin")
       return
     }
 
@@ -101,7 +113,10 @@ export function TaxiBooking() {
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
+
+    const pickupLocation = `${fromCity} - ${fromDistrict}`
+    const dropoffLocation = `${toCity} - ${toDistrict}`
+
     const cartItem = {
       id: `taxi-${Date.now()}`,
       type: "taxi" as const,
@@ -110,8 +125,8 @@ export function TaxiBooking() {
       price,
       details: {
         serviceName: selectedService.name,
-        pickupLocation: fromCity,
-        dropoffLocation: toCity,
+        pickupLocation,
+        dropoffLocation,
         distance,
         scheduledDate,
         isRoundTrip,
@@ -126,7 +141,9 @@ export function TaxiBooking() {
     setSuccess(`${selectedService.name} sepete eklendi!`)
     setSelectedService(null)
     setFromCity("")
+    setFromDistrict("")
     setToCity("")
+    setToDistrict("")
     setIsRoundTrip(false)
     setScheduledDate("")
   }
@@ -183,36 +200,80 @@ export function TaxiBooking() {
               </Alert>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Kalkış Şehri</label>
-              <select
-                value={fromCity}
-                onChange={(e) => setFromCity(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="">Şehir seçin</option>
-                {mockTurkishCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İli</label>
+                <select
+                  value={fromCity}
+                  onChange={(e) => {
+                    setFromCity(e.target.value)
+                    setFromDistrict("")
+                  }}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İl seçin</option>
+                  {mockTurkishCities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kalkış İlçesi</label>
+                <select
+                  value={fromDistrict}
+                  onChange={(e) => setFromDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  disabled={!fromCity}
+                >
+                  <option value="">İlçe seçin</option>
+                  {getDistrictsForCity(fromCity).map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Varış Şehri</label>
-              <select
-                value={toCity}
-                onChange={(e) => setToCity(e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-md bg-background"
-              >
-                <option value="">Şehir seçin</option>
-                {mockTurkishCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İli</label>
+                <select
+                  value={toCity}
+                  onChange={(e) => {
+                    setToCity(e.target.value)
+                    setToDistrict("")
+                  }}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                >
+                  <option value="">İl seçin</option>
+                  {mockTurkishCities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Varış İlçesi</label>
+                <select
+                  value={toDistrict}
+                  onChange={(e) => setToDistrict(e.target.value)}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  disabled={!toCity}
+                >
+                  <option value="">İlçe seçin</option>
+                  {getDistrictsForCity(toCity).map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
