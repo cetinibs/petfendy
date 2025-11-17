@@ -253,20 +253,20 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header / Navigation */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
+      <header className="sticky top-0 z-50 bg-white border-b shadow-md">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 cursor-pointer hover:scale-105 transition-transform duration-200">
             <Image
-              src="/petfendy-logo.svg"
+              src="https://i0.wp.com/petfendy.com/wp-content/uploads/2024/04/Logo.jpg?resize=2000%2C1400&ssl=1"
               alt="Petfendy Logo"
-              width={48}
-              height={48}
-              className="w-12 h-12"
+              width={120}
+              height={84}
+              className="w-20 h-14 sm:w-28 sm:h-20 rounded-lg shadow-lg object-cover"
               priority
             />
-            <div>
+            <div className="hidden sm:block">
               <h1 className="text-xl font-bold text-primary">PETFENDY</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">
+              <p className="text-xs text-muted-foreground">
                 Evcil Hayvan Oteli
               </p>
             </div>
