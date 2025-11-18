@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Navigation } from "@/components/navigation"
+import { MobileMenu } from "@/components/mobile-menu"
 import { ShoppingCart, Globe, Phone, Mail, MapPin, Clock } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -107,6 +108,7 @@ export default function ContactPage() {
               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push(`/${locale}/home`)}
             >
+              <MobileMenu locale={locale} />
               <Image
                 src="/petfendy-logo.svg"
                 alt="Petfendy Logo"

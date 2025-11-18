@@ -32,6 +32,7 @@ import {
   Clock
 } from "lucide-react"
 import { Navigation } from "@/components/navigation"
+import { MobileMenu } from "@/components/mobile-menu"
 
 export default function HomePage() {
   const t = useTranslations('hotel')
@@ -258,6 +259,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-3">
+              <MobileMenu locale="tr" />
               <Image
                 src="/petfendy-logo.svg"
                 alt="Petfendy Logo"

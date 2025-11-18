@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Navigation } from "@/components/navigation"
+import { MobileMenu } from "@/components/mobile-menu"
 import { ShoppingCart, Globe, Calendar, User, ArrowRight } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -107,6 +108,7 @@ export default function BlogPage() {
               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push(`/${locale}/home`)}
             >
+              <MobileMenu locale={locale} />
               <Image
                 src="/petfendy-logo.svg"
                 alt="Petfendy Logo"

@@ -6,6 +6,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Navigation } from "@/components/navigation"
+import { MobileMenu } from "@/components/mobile-menu"
 import { ShoppingCart, Globe, HelpCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
@@ -148,6 +149,7 @@ export default function FAQPage() {
               className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => router.push(`/${locale}/home`)}
             >
+              <MobileMenu locale={locale} />
               <Image
                 src="/petfendy-logo.svg"
                 alt="Petfendy Logo"
