@@ -42,6 +42,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { LogoManagement } from "@/components/logo-management"
 
 interface Booking {
   id: string
@@ -582,12 +583,13 @@ export function AdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders">Siparişler</TabsTrigger>
           <TabsTrigger value="rooms">Odalar</TabsTrigger>
           <TabsTrigger value="services">Taksi</TabsTrigger>
           <TabsTrigger value="pricing">Fiyatlandırma</TabsTrigger>
           <TabsTrigger value="reports">Raporlar</TabsTrigger>
+          <TabsTrigger value="logos">Logolar</TabsTrigger>
         </TabsList>
 
         {/* Orders Tab */}
@@ -1423,6 +1425,11 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Logos Tab */}
+        <TabsContent value="logos" className="space-y-4">
+          <LogoManagement />
         </TabsContent>
       </Tabs>
     </div>

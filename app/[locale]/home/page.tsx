@@ -15,10 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import { getLogoSettings } from "@/lib/logo-storage"
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
@@ -36,14 +37,14 @@ export default function HomePage() {
   const t = useTranslations('hotel')
   const tCommon = useTranslations('common')
   const router = useRouter()
-  
+
   // Hotel states
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
   const [checkOutDate, setCheckOutDate] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
-  
+
   // Taxi states
   const [taxiServices] = useState<TaxiService[]>(mockTaxiServices)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -54,13 +55,14 @@ export default function HomePage() {
   const [pickupDate, setPickupDate] = useState("")
   const [pickupTime, setPickupTime] = useState("")
   const [petCount, setPetCount] = useState(1)
-  
+
   // Common states
   const [showReservation, setShowReservation] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [cartItemCount, setCartItemCount] = useState(0)
-  
+  const [headerLogo, setHeaderLogo] = useState("/petfendy-logo.svg")
+
   // Update cart count
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -68,9 +70,23 @@ export default function HomePage() {
         setCartItemCount(getCart().length)
       }
       updateCount()
-      
+
       window.addEventListener('cartUpdated', updateCount)
       return () => window.removeEventListener('cartUpdated', updateCount)
+    }
+  }, [])
+
+  // Update logo from settings
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const updateLogo = () => {
+        const logoSettings = getLogoSettings()
+        setHeaderLogo(logoSettings.headerLogo)
+      }
+      updateLogo()
+
+      window.addEventListener('logoUpdated', updateLogo)
+      return () => window.removeEventListener('logoUpdated', updateLogo)
     }
   }, [])
 
@@ -257,7 +273,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <Image
-              src="/petfendy-logo.svg"
+              src={headerLogo}
               alt="Petfendy Logo"
               width={48}
               height={48}
