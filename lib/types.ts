@@ -113,19 +113,12 @@ export interface RoomPricing {
   available: boolean
 }
 
-export interface CartItem {
-  id: string
-  type: "hotel" | "taxi"
-  itemId: string
-  quantity: number
-  price: number
-  details: Record<string, any>
-}
-
 export interface Order {
   id: string
-  userId: string
-  items: CartItem[]
+  userId: string | null // null for guest purchases
+  bookingId: string
+  bookingType: "hotel" | "taxi"
+  bookingDetails: Record<string, any>
   totalPrice: number
   status: "pending" | "paid" | "completed" | "cancelled"
   paymentMethod: "credit_card" | "bank_transfer" | "wallet"
@@ -138,10 +131,12 @@ export interface Invoice {
   id: string
   orderId: string
   invoiceNumber: string
-  userId: string
+  userId: string | null
+  bookingId: string
+  bookingType: "hotel" | "taxi"
+  bookingDetails: Record<string, any>
   totalAmount: number
   taxAmount: number
-  items: CartItem[]
   issueDate: Date
   dueDate: Date
   status: "draft" | "sent" | "paid" | "overdue"

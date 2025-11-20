@@ -48,7 +48,6 @@
     "hotel": "Pet Hotel",
     "taxi": "Pet Taxi",
     "pets": "Pets",
-    "cart": "Cart",
     "invoices": "Invoices",
     "reports": "Reports",
     "profile": "Profile",
@@ -69,8 +68,8 @@
     "nights": "Number of Nights",
     "nightPrice": "Night Price",
     "total": "Total",
-    "addToCart": "Add to Cart",
-    "addedToCart": "{roomName} added to cart!",
+    "addToCart": "Make Reservation",
+    "addedToCart": "{roomName} reservation created!",
     "selectRoomError": "Please select a room",
     "selectDatesError": "Please select check-in and check-out dates",
     "dateValidationError": "Check-out date must be after check-in date",
@@ -123,15 +122,6 @@
     "paymentFailed": "Payment failed. Please try again.",
     "totalAmount": "Total Amount",
     "processing": "Processing..."
-  },
-  "cart": {
-    "title": "My Cart",
-    "empty": "Your cart is empty",
-    "removeItem": "Remove",
-    "checkout": "Checkout",
-    "total": "Total",
-    "continueAsGuest": "Continue as Guest",
-    "loginToContinue": "Login or register to continue"
   }
 }
 

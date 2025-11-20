@@ -9,20 +9,44 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { processPayment } from "@/lib/payment-service-secure"
 import { validateCardNumber, validateCVV } from "@/lib/encryption"
-import { CreditCard, Lock, User, Building2 } from "lucide-react"
-import type { CartItem } from "@/lib/types"
+import { CreditCard, Lock, User, Building2, UserPlus } from "lucide-react"
 
 interface PaymentModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: () => void
-  cartItems: CartItem[]
+  onSuccess: (paymentData: {
+    paymentMethod: string
+    invoiceInfo: any
+    guestInfo?: { email: string; name: string; phone: string }
+  }) => void
+  bookingType: "hotel" | "taxi"
+  bookingDetails: Record<string, any>
   totalAmount: number
-  userEmail: string
+  userEmail?: string
+  isGuest?: boolean
+  onLoginRequest?: () => void
 }
 
-export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmount, userEmail }: PaymentModalProps) {
+export function PaymentModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  bookingType,
+  bookingDetails,
+  totalAmount,
+  userEmail = "",
+  isGuest = false,
+  onLoginRequest
+}: PaymentModalProps) {
   const t = useTranslations('payment');
+  const [checkoutMode, setCheckoutMode] = useState<"choose" | "guest" | "payment">(
+    isGuest ? "choose" : "payment"
+  )
+  const [guestInfo, setGuestInfo] = useState({
+    email: "",
+    name: "",
+    phone: "",
+  })
   const [formData, setFormData] = useState({
     cardNumber: "",
     cardHolder: "",
@@ -66,6 +90,31 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
     setFormData({ ...formData, expiryDate: formatted })
   }
 
+  const validateGuestInfo = (): boolean => {
+    const newErrors: Record<string, string> = {}
+
+    if (!guestInfo.email.trim()) {
+      newErrors.guestEmail = "E-posta adresi zorunludur"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestInfo.email)) {
+      newErrors.guestEmail = "Geçerli bir e-posta adresi giriniz"
+    }
+
+    if (!guestInfo.name.trim()) {
+      newErrors.guestName = "Ad Soyad zorunludur"
+    } else if (guestInfo.name.trim().length < 3) {
+      newErrors.guestName = "Ad Soyad en az 3 karakter olmalıdır"
+    }
+
+    if (!guestInfo.phone.trim()) {
+      newErrors.guestPhone = "Telefon numarası zorunludur"
+    } else if (!/^[0-9]{10}$/.test(guestInfo.phone.replace(/\s/g, ''))) {
+      newErrors.guestPhone = "Geçerli bir telefon numarası giriniz (10 hane)"
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
@@ -90,15 +139,15 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
     } else {
       const month = parseInt(expiryParts[0])
       const year = parseInt(expiryParts[1])
-      
+
       if (month < 1 || month > 12) {
         newErrors.expiryDate = "Geçersiz ay"
       }
-      
+
       // Check if card is expired
       const currentYear = new Date().getFullYear() % 100
       const currentMonth = new Date().getMonth() + 1
-      
+
       if (year < currentYear || (year === currentYear && month < currentMonth)) {
         newErrors.expiryDate = "Kartın süresi dolmuş"
       }
@@ -140,6 +189,13 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
     return Object.keys(newErrors).length === 0
   }
 
+  const handleGuestContinue = () => {
+    if (!validateGuestInfo()) {
+      return
+    }
+    setCheckoutMode("payment")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrors({})
@@ -151,19 +207,36 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
 
     setIsProcessing(true)
     try {
+      const email = checkoutMode === "guest" ? guestInfo.email : userEmail
       const paymentResult = await processPayment({
         amount: totalAmount,
         cardNumber: formData.cardNumber.replace(/\s/g, ''),
         cardHolder: formData.cardHolder,
         expiryDate: formData.expiryDate,
         cvv: formData.cvv,
-        email: userEmail,
+        email: email,
       })
 
       if (paymentResult.success) {
         setSuccess(true)
         setTimeout(() => {
-          onSuccess()
+          onSuccess({
+            paymentMethod: "credit_card",
+            invoiceInfo: invoiceType === "individual"
+              ? {
+                  type: "individual",
+                  name: invoiceInfo.individualName,
+                  surname: invoiceInfo.individualSurname,
+                  tcNo: invoiceInfo.individualTcNo,
+                }
+              : {
+                  type: "corporate",
+                  name: invoiceInfo.corporateName,
+                  taxNo: invoiceInfo.corporateTaxNo,
+                  address: invoiceInfo.corporateAddress,
+                },
+            guestInfo: checkoutMode === "guest" ? guestInfo : undefined,
+          })
           onClose()
           // Reset form
           setFormData({
@@ -186,14 +259,20 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
-            {t('title')}
+            {checkoutMode === "choose"
+              ? "Rezervasyon Tamamla"
+              : checkoutMode === "guest"
+              ? "İletişim Bilgileri"
+              : t('title')}
           </DialogTitle>
           <DialogDescription>
-            Güvenli ödeme - Tüm bilgileriniz şifrelenir
+            {checkoutMode === "choose"
+              ? "Rezervasyonunuzu tamamlamak için devam edin"
+              : "Güvenli ödeme - Tüm bilgileriniz şifrelenir"}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,6 +282,111 @@ export function PaymentModal({ isOpen, onClose, onSuccess, cartItems, totalAmoun
               {t('paymentSuccess')}
             </AlertDescription>
           </Alert>
+        ) : checkoutMode === "choose" ? (
+          <div className="space-y-4">
+            <div className="bg-muted p-4 rounded-lg mb-4">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Toplam Tutar:</span>
+                <span className="text-2xl font-bold text-primary">₺{totalAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full h-16 text-base"
+              onClick={() => {
+                if (onLoginRequest) {
+                  onLoginRequest()
+                }
+              }}
+            >
+              <User className="w-5 h-5 mr-2" />
+              Üye Olarak Devam Et
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Veya</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-16 text-base"
+              onClick={() => setCheckoutMode("guest")}
+            >
+              <UserPlus className="w-5 h-5 mr-2" />
+              Misafir Olarak Devam Et
+            </Button>
+          </div>
+        ) : checkoutMode === "guest" ? (
+          <div className="space-y-4">
+            <Alert>
+              <AlertDescription>
+                Lütfen iletişim bilgilerinizi girin. Rezervasyon detayları bu bilgilere gönderilecektir.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <label htmlFor="guestEmail" className="text-sm font-medium">
+                  E-posta Adresi
+                </label>
+                <Input
+                  id="guestEmail"
+                  type="email"
+                  placeholder="ornek@email.com"
+                  value={guestInfo.email}
+                  onChange={(e) => setGuestInfo({ ...guestInfo, email: e.target.value })}
+                />
+                {errors.guestEmail && <p className="text-sm text-destructive">{errors.guestEmail}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="guestName" className="text-sm font-medium">
+                  Ad Soyad
+                </label>
+                <Input
+                  id="guestName"
+                  type="text"
+                  placeholder="Adınız Soyadınız"
+                  value={guestInfo.name}
+                  onChange={(e) => setGuestInfo({ ...guestInfo, name: e.target.value })}
+                />
+                {errors.guestName && <p className="text-sm text-destructive">{errors.guestName}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="guestPhone" className="text-sm font-medium">
+                  Telefon Numarası
+                </label>
+                <Input
+                  id="guestPhone"
+                  type="tel"
+                  placeholder="5XXXXXXXXX"
+                  value={guestInfo.phone}
+                  onChange={(e) =>
+                    setGuestInfo({ ...guestInfo, phone: e.target.value.replace(/\D/g, '').substring(0, 10) })
+                  }
+                  maxLength={10}
+                />
+                {errors.guestPhone && <p className="text-sm text-destructive">{errors.guestPhone}</p>}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => setCheckoutMode("choose")} className="flex-1">
+                Geri
+              </Button>
+              <Button type="button" onClick={handleGuestContinue} className="flex-1">
+                Devam Et
+              </Button>
+            </div>
+          </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {errors.submit && (

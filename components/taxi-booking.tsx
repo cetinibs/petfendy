@@ -1,17 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import type { TaxiService, CityPricing } from "@/lib/types"
+import type { TaxiService, CityPricing, Booking, Order } from "@/lib/types"
 import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { PaymentModal } from "@/components/payment-modal"
+import { useAuth } from "@/components/auth-context"
+import { sendEmail } from "@/lib/email-service"
+import { toast } from "@/components/ui/use-toast"
 
-export function TaxiBooking() {
+interface TaxiBookingProps {
+  onLoginRequest?: () => void
+}
+
+export function TaxiBooking({ onLoginRequest }: TaxiBookingProps = {}) {
+  const { user } = useAuth()
   const [services] = useState<TaxiService[]>(mockTaxiServices)
   const [cityPricings] = useState<CityPricing[]>(mockCityPricings)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -21,6 +29,7 @@ export function TaxiBooking() {
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
 
   // Calculate distance based on city pairs or use default
   const getDistance = (): number => {
@@ -98,17 +107,43 @@ export function TaxiBooking() {
       return
     }
 
+    // Open payment modal
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = async (paymentData: {
+    paymentMethod: string
+    invoiceInfo: any
+    guestInfo?: { email: string; name: string; phone: string }
+  }) => {
+    if (!selectedService) return
+
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
-    const cartItem = {
+
+    // Create booking
+    const booking: Booking = {
       id: `taxi-${Date.now()}`,
-      type: "taxi" as const,
-      itemId: selectedService.id,
-      quantity: 1,
-      price,
-      details: {
+      userId: paymentData.guestInfo ? null : user?.id || null,
+      roomId: null,
+      petId: null,
+      startDate: new Date(scheduledDate),
+      endDate: null,
+      totalPrice: price,
+      type: "taxi",
+      status: "confirmed",
+      createdAt: new Date(),
+      specialRequests: `Pickup: ${fromCity}, Dropoff: ${toCity}${isRoundTrip ? " (Round Trip)" : ""}`,
+    }
+
+    // Create order
+    const order: Order = {
+      id: `order-${Date.now()}`,
+      userId: paymentData.guestInfo ? null : user?.id || null,
+      bookingId: booking.id,
+      bookingType: "taxi",
+      bookingDetails: {
         serviceName: selectedService.name,
         pickupLocation: fromCity,
         dropoffLocation: toCity,
@@ -120,15 +155,52 @@ export function TaxiBooking() {
         additionalFee: cityPricing?.additionalFee || 0,
         discount: cityPricing?.discount || 0,
       },
+      totalPrice: price,
+      status: "paid",
+      paymentMethod: paymentData.paymentMethod as any,
+      invoiceNumber: `INV-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }
 
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepete eklendi!`)
+    // Save to localStorage
+    const existingBookings = JSON.parse(localStorage.getItem("petfendy_bookings") || "[]")
+    existingBookings.push(booking)
+    localStorage.setItem("petfendy_bookings", JSON.stringify(existingBookings))
+
+    const existingOrders = JSON.parse(localStorage.getItem("petfendy_orders") || "[]")
+    existingOrders.push(order)
+    localStorage.setItem("petfendy_orders", JSON.stringify(existingOrders))
+
+    // If guest, save guest order
+    if (paymentData.guestInfo) {
+      const guestOrders = JSON.parse(localStorage.getItem("petfendy_guest_orders") || "[]")
+      guestOrders.push({ order, booking, guestInfo: paymentData.guestInfo })
+      localStorage.setItem("petfendy_guest_orders", JSON.stringify(guestOrders))
+    }
+
+    // Send confirmation email
+    const emailAddress = paymentData.guestInfo?.email || user?.email || ""
+    await sendEmail({
+      to: emailAddress,
+      subject: "Taksi Rezervasyon Onayı",
+      body: `Taksi rezervasyonunuz onaylandı! Rezervasyon No: ${booking.id}`,
+    })
+
+    // Show success message
+    toast({
+      title: "✅ Rezervasyon Başarılı!",
+      description: `${selectedService.name} rezervasyonunuz oluşturuldu. Toplam: ₺${price.toFixed(2)}`,
+      duration: 5000,
+    })
+
+    // Reset form
     setSelectedService(null)
     setFromCity("")
     setToCity("")
     setIsRoundTrip(false)
     setScheduledDate("")
+    setShowPaymentModal(false)
   }
 
   return (
@@ -271,10 +343,33 @@ export function TaxiBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              Sepete Ekle
+              Rezervasyon Yap
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {selectedService && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          bookingType="taxi"
+          bookingDetails={{
+            serviceName: selectedService.name,
+            pickupLocation: fromCity,
+            dropoffLocation: toCity,
+            distance: getDistance(),
+            scheduledDate,
+            isRoundTrip,
+            basePrice: selectedService.basePrice,
+            pricePerKm: selectedService.pricePerKm,
+          }}
+          totalAmount={calculatePrice()}
+          userEmail={user?.email}
+          isGuest={!user}
+          onLoginRequest={onLoginRequest}
+        />
       )}
     </div>
   )

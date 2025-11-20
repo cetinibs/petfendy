@@ -39,15 +39,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
     try {
       await login(sanitizedEmail, password)
       onSuccess?.()
-      
-      // Check if user has items in cart and redirect to cart
-      if (typeof window !== 'undefined') {
-        const cart = localStorage.getItem('petfendy_cart')
-        if (cart && JSON.parse(cart).length > 0) {
-          // User will be redirected to cart tab automatically by parent component
-          console.log('User has items in cart, will be redirected to cart')
-        }
-      }
     } catch (err) {
       setError("Giriş başarısız. Lütfen bilgilerinizi kontrol edin.")
     } finally {

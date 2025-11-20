@@ -48,7 +48,6 @@
     "hotel": "Pet Otel",
     "taxi": "Hayvan Taksi",
     "pets": "Evcil Hayvanlar",
-    "cart": "Sepet",
     "invoices": "Faturalar",
     "reports": "Raporlar",
     "profile": "Profil",
@@ -69,8 +68,8 @@
     "nights": "Gece Sayısı",
     "nightPrice": "Gece Fiyatı",
     "total": "Toplam",
-    "addToCart": "Sepete Ekle",
-    "addedToCart": "{roomName} sepete eklendi!",
+    "addToCart": "Rezervasyon Yap",
+    "addedToCart": "{roomName} rezervasyonu oluşturuldu!",
     "selectRoomError": "Lütfen bir oda seçin",
     "selectDatesError": "Lütfen giriş ve çıkış tarihlerini seçin",
     "dateValidationError": "Çıkış tarihi giriş tarihinden sonra olmalıdır",
@@ -123,15 +122,6 @@
     "paymentFailed": "Ödeme başarısız oldu. Lütfen tekrar deneyin.",
     "totalAmount": "Toplam Tutar",
     "processing": "İşleniyor..."
-  },
-  "cart": {
-    "title": "Sepetim",
-    "empty": "Sepetiniz boş",
-    "removeItem": "Kaldır",
-    "checkout": "Ödemeye Geç",
-    "total": "Toplam",
-    "continueAsGuest": "Misafir Olarak Devam Et",
-    "loginToContinue": "Devam etmek için giriş yapın veya kayıt olun"
   }
 }
 

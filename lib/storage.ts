@@ -1,10 +1,9 @@
 // Client-side storage management with security considerations
-import type { User, CartItem } from "./types"
+import type { User } from "./types"
 
 const STORAGE_PREFIX = "petfendy_"
 const TOKEN_KEY = `${STORAGE_PREFIX}auth_token`
 const USER_KEY = `${STORAGE_PREFIX}user`
-const CART_KEY = `${STORAGE_PREFIX}cart`
 const PENDING_USER_KEY = `${STORAGE_PREFIX}pending_user`
 
 // Secure token storage
@@ -54,62 +53,10 @@ export function clearCurrentUser(): void {
   }
 }
 
-// Cart management
-export function getCart(): CartItem[] {
-  if (typeof window !== "undefined") {
-    const cart = localStorage.getItem(CART_KEY)
-    return cart ? JSON.parse(cart) : []
-  }
-  return []
-}
-
-export function setCart(items: CartItem[]): void {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(CART_KEY, JSON.stringify(items))
-  }
-}
-
-export function clearCart(): void {
-  if (typeof window !== "undefined") {
-    localStorage.removeItem(CART_KEY)
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
-}
-
-export function addToCart(item: CartItem): void {
-  const cart = getCart()
-  const existingItem = cart.find((i) => i.type === item.type && i.itemId === item.itemId)
-
-  if (existingItem) {
-    existingItem.quantity += item.quantity
-  } else {
-    cart.push(item)
-  }
-
-  setCart(cart)
-  
-  // Dispatch custom event for cart updates
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
-}
-
-export function removeFromCart(itemId: string): void {
-  const cart = getCart()
-  const filtered = cart.filter((item) => item.id !== itemId)
-  setCart(filtered)
-  
-  // Dispatch custom event for cart updates
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('cartUpdated'))
-  }
-}
-
 export function clearAllData(): void {
   if (typeof window !== "undefined") {
     clearAuthToken()
     clearCurrentUser()
-    clearCart()
   }
 }
 

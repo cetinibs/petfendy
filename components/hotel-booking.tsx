@@ -1,18 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import type { HotelRoom } from "@/lib/types"
+import type { HotelRoom, Booking, Order } from "@/lib/types"
 import { mockHotelRooms } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTranslations } from 'next-intl';
 import { toast } from "@/components/ui/use-toast"
+import { PaymentModal } from "@/components/payment-modal"
+import { useAuth } from "@/components/auth-context"
+import { sendEmail } from "@/lib/email-service"
 
-export function HotelBooking() {
+interface HotelBookingProps {
+  onLoginRequest?: () => void
+}
+
+export function HotelBooking({ onLoginRequest }: HotelBookingProps = {}) {
   const t = useTranslations('hotel');
+  const { user } = useAuth()
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
@@ -20,6 +27,7 @@ export function HotelBooking() {
   const [specialRequests, setSpecialRequests] = useState("")
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
 
   const calculateNights = (): number => {
     if (!checkInDate || !checkOutDate) return 0
@@ -55,38 +63,94 @@ export function HotelBooking() {
       return
     }
 
+    // Open payment modal
+    setShowPaymentModal(true)
+  }
+
+  const handlePaymentSuccess = async (paymentData: {
+    paymentMethod: string
+    invoiceInfo: any
+    guestInfo?: { email: string; name: string; phone: string }
+  }) => {
+    if (!selectedRoom) return
+
     const nights = calculateNights()
     const total = calculateTotal()
 
-    const cartItem = {
+    // Create booking
+    const booking: Booking = {
       id: `hotel-${Date.now()}`,
-      type: "hotel" as const,
-      itemId: selectedRoom.id,
-      quantity: nights,
-      price: total,
-      details: {
+      userId: paymentData.guestInfo ? null : user?.id || null,
+      roomId: selectedRoom.id,
+      petId: null,
+      startDate: new Date(checkInDate),
+      endDate: new Date(checkOutDate),
+      totalPrice: total,
+      type: "hotel",
+      status: "confirmed",
+      createdAt: new Date(),
+      specialRequests,
+    }
+
+    // Create order
+    const order: Order = {
+      id: `order-${Date.now()}`,
+      userId: paymentData.guestInfo ? null : user?.id || null,
+      bookingId: booking.id,
+      bookingType: "hotel",
+      bookingDetails: {
         roomName: selectedRoom.name,
         checkInDate,
         checkOutDate,
         specialRequests,
         pricePerNight: selectedRoom.pricePerNight,
+        nights,
       },
+      totalPrice: total,
+      status: "paid",
+      paymentMethod: paymentData.paymentMethod as any,
+      invoiceNumber: `INV-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     }
 
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
-    toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Toplam: ₺${total}`,
-      duration: 3000,
+    // Save to localStorage
+    const existingBookings = JSON.parse(localStorage.getItem("petfendy_bookings") || "[]")
+    existingBookings.push(booking)
+    localStorage.setItem("petfendy_bookings", JSON.stringify(existingBookings))
+
+    const existingOrders = JSON.parse(localStorage.getItem("petfendy_orders") || "[]")
+    existingOrders.push(order)
+    localStorage.setItem("petfendy_orders", JSON.stringify(existingOrders))
+
+    // If guest, save guest order
+    if (paymentData.guestInfo) {
+      const guestOrders = JSON.parse(localStorage.getItem("petfendy_guest_orders") || "[]")
+      guestOrders.push({ order, booking, guestInfo: paymentData.guestInfo })
+      localStorage.setItem("petfendy_guest_orders", JSON.stringify(guestOrders))
+    }
+
+    // Send confirmation email
+    const emailAddress = paymentData.guestInfo?.email || user?.email || ""
+    await sendEmail({
+      to: emailAddress,
+      subject: "Rezervasyon Onayı",
+      body: `Rezervasyonunuz onaylandı! Rezervasyon No: ${booking.id}`,
     })
-    
+
+    // Show success message
+    toast({
+      title: "✅ Rezervasyon Başarılı!",
+      description: `${selectedRoom.name} rezervasyonunuz oluşturuldu. Toplam: ₺${total}`,
+      duration: 5000,
+    })
+
+    // Reset form
     setSelectedRoom(null)
     setCheckInDate("")
     setCheckOutDate("")
     setSpecialRequests("")
+    setShowPaymentModal(false)
   }
 
   return (
@@ -183,10 +247,31 @@ export function HotelBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              {t('addToCart')}
+              Rezervasyon Yap
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {selectedRoom && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSuccess={handlePaymentSuccess}
+          bookingType="hotel"
+          bookingDetails={{
+            roomName: selectedRoom.name,
+            checkInDate,
+            checkOutDate,
+            specialRequests,
+            pricePerNight: selectedRoom.pricePerNight,
+            nights: calculateNights(),
+          }}
+          totalAmount={calculateTotal()}
+          userEmail={user?.email}
+          isGuest={!user}
+          onLoginRequest={onLoginRequest}
+        />
       )}
     </div>
   )

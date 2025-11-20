@@ -1,28 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { addToCart, getCart } from "@/lib/storage"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
-  ShoppingCart,
   ChevronRight,
   PawPrint,
   Heart,
@@ -35,15 +32,16 @@ import {
 export default function HomePage() {
   const t = useTranslations('hotel')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   const router = useRouter()
-  
+
   // Hotel states
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
   const [checkOutDate, setCheckOutDate] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
-  
+
   // Taxi states
   const [taxiServices] = useState<TaxiService[]>(mockTaxiServices)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -54,25 +52,11 @@ export default function HomePage() {
   const [pickupDate, setPickupDate] = useState("")
   const [pickupTime, setPickupTime] = useState("")
   const [petCount, setPetCount] = useState(1)
-  
+
   // Common states
   const [showReservation, setShowReservation] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [cartItemCount, setCartItemCount] = useState(0)
-  
-  // Update cart count
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const updateCount = () => {
-        setCartItemCount(getCart().length)
-      }
-      updateCount()
-      
-      window.addEventListener('cartUpdated', updateCount)
-      return () => window.removeEventListener('cartUpdated', updateCount)
-    }
-  }, [])
 
   const stats = [
     { icon: Users, label: "Misafir Edilen Dostlar", value: "1000+" },
@@ -144,33 +128,14 @@ export default function HomePage() {
       return
     }
 
-    const nights = calculateNights()
-    const total = calculateTotal()
-
-    const cartItem = {
-      id: `hotel-${Date.now()}`,
-      type: "hotel" as const,
-      itemId: selectedRoom.id,
-      quantity: nights,
-      price: total,
-      details: {
-        roomName: selectedRoom.name,
-        checkInDate,
-        checkOutDate,
-        specialRequests,
-        pricePerNight: selectedRoom.pricePerNight,
-      },
-    }
-
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
+    // Redirect to login page for checkout
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
+      title: "Rezervasyon İçin Giriş Yapın",
+      description: "Rezervasyonunuzu tamamlamak için lütfen giriş yapın veya kayıt olun.",
       duration: 3000,
     })
+
+    router.push(`/${locale}`)
   }
 
   const calculateDistance = (): number => {
@@ -216,38 +181,14 @@ export default function HomePage() {
       return
     }
 
-    const distance = calculateDistance()
-    const total = calculateTaxiTotal()
-
-    const cartItem = {
-      id: `taxi-${Date.now()}`,
-      type: "taxi" as const,
-      itemId: selectedService.id,
-      quantity: distance,
-      price: total,
-      details: {
-        serviceName: selectedService.name,
-        pickupCity,
-        dropoffCity,
-        pickupLocation,
-        dropoffLocation,
-        pickupDate,
-        pickupTime,
-        petCount,
-        distance,
-        pricePerKm: selectedService.pricePerKm,
-      },
-    }
-
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepetinize eklendi`)
-    
-    // Show toast notification
+    // Redirect to login page for checkout
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedService.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
+      title: "Rezervasyon İçin Giriş Yapın",
+      description: "Rezervasyonunuzu tamamlamak için lütfen giriş yapın veya kayıt olun.",
       duration: 3000,
     })
+
+    router.push(`/${locale}`)
   }
 
   return (
@@ -273,18 +214,7 @@ export default function HomePage() {
           </div>
           
           <div className="flex gap-2 items-center">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => router.push('/tr')}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline">Sepet</span>
-              {cartItemCount > 0 && (
-                <Badge variant="destructive" className="ml-1">{cartItemCount}</Badge>
-              )}
-            </Button>
-            <Button onClick={() => router.push('/tr')}>
+            <Button onClick={() => router.push(`/${locale}`)}>
               Giriş Yap
             </Button>
           </div>
