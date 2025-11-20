@@ -184,7 +184,30 @@ CVV: 123
 
 ## 📦 Production Deployment
 
-### Checklist
+Detaylı deployment bilgileri için: **[DEPLOYMENT.md](DEPLOYMENT.md)**
+
+### Hızlı Başlangıç
+
+#### Docker ile (Önerilen)
+```bash
+# 1. Environment dosyası oluşturun
+cp .env.example .env.local
+# .env.local dosyasını düzenleyin
+
+# 2. Deployment script'i çalıştırın
+./deploy.sh
+```
+
+#### Manuel Deployment
+```bash
+# 1. Build
+npm run build
+
+# 2. Start
+npm start
+```
+
+### Deployment Checklist
 - [ ] Environment variables güvenli değerlerle ayarlandı
 - [ ] HTTPS sertifikası yüklendi
 - [ ] Payment gateway production keys eklendi
@@ -194,11 +217,11 @@ CVV: 123
 - [ ] Backup stratejisi hazır
 - [ ] Security audit yapıldı
 
-### Deployment Komutları
-```bash
-npm run build
-npm start
-```
+### Platform-Specific Deployments
+- **Vercel**: Tek tık ile deploy (önerilen)
+- **Docker**: `docker-compose up -d --build`
+- **Railway**: `railway up`
+- **AWS/DigitalOcean**: Detaylar için DEPLOYMENT.md'ye bakın
 
 ---
 
