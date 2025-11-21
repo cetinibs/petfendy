@@ -10,6 +10,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  turbopack: false,
 }
 
 export default withNextIntl(nextConfig);
