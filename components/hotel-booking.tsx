@@ -3,23 +3,32 @@
 import { useState } from "react"
 import type { HotelRoom } from "@/lib/types"
 import { mockHotelRooms } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
+import { DirectCheckout } from "@/components/direct-checkout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl'
 import { toast } from "@/components/ui/use-toast"
+import { CreditCard } from "lucide-react"
 
 export function HotelBooking() {
-  const t = useTranslations('hotel');
+  const t = useTranslations('hotel')
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
   const [checkOutDate, setCheckOutDate] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+
+  // Checkout modal state
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    type: "hotel"
+    itemId: string
+    price: number
+    details: Record<string, any>
+  } | null>(null)
 
   const calculateNights = (): number => {
     if (!checkInDate || !checkOutDate) return 0
@@ -35,7 +44,6 @@ export function HotelBooking() {
 
   const handleBooking = () => {
     setError("")
-    setSuccess("")
 
     if (!selectedRoom) {
       setError(t('selectRoomError'))
@@ -58,46 +66,60 @@ export function HotelBooking() {
     const nights = calculateNights()
     const total = calculateTotal()
 
-    const cartItem = {
-      id: `hotel-${Date.now()}`,
-      type: "hotel" as const,
+    // Set booking details and open checkout modal
+    setBookingDetails({
+      type: "hotel",
       itemId: selectedRoom.id,
-      quantity: nights,
       price: total,
       details: {
         roomName: selectedRoom.name,
         checkInDate,
         checkOutDate,
+        nights,
         specialRequests,
         pricePerNight: selectedRoom.pricePerNight,
       },
-    }
-
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
-    toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Toplam: ₺${total}`,
-      duration: 3000,
     })
-    
+    setShowCheckout(true)
+  }
+
+  const handleCheckoutSuccess = () => {
+    // Reset form after successful checkout
     setSelectedRoom(null)
     setCheckInDate("")
     setCheckOutDate("")
     setSpecialRequests("")
+    setBookingDetails(null)
+
+    toast({
+      title: "Rezervasyon Tamamlandı!",
+      description: "Otel rezervasyonunuz başarıyla oluşturuldu.",
+      duration: 5000,
+    })
   }
+
+  // Get minimum date (today)
+  const today = new Date().toISOString().split('T')[0]
 
   return (
     <div className="space-y-6">
+      {/* Checkout Modal */}
+      {bookingDetails && (
+        <DirectCheckout
+          isOpen={showCheckout}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={handleCheckoutSuccess}
+          booking={bookingDetails}
+        />
+      )}
+
       <div>
         <h2 className="text-2xl font-bold mb-4">{t('title')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {rooms.map((room) => (
             <Card
               key={room.id}
-              className={`cursor-pointer transition-all ${selectedRoom?.id === room.id ? "ring-2 ring-primary" : ""}`}
+              className={`cursor-pointer transition-all hover:shadow-lg ${selectedRoom?.id === room.id ? "ring-2 ring-primary" : ""}`}
               onClick={() => setSelectedRoom(room)}
             >
               <CardHeader>
@@ -138,20 +160,25 @@ export function HotelBooking() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            {success && (
-              <Alert>
-                <AlertDescription className="text-green-600">{success}</AlertDescription>
-              </Alert>
-            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('checkIn')}</label>
-                <Input type="date" value={checkInDate} onChange={(e) => setCheckInDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={checkInDate}
+                  onChange={(e) => setCheckInDate(e.target.value)}
+                  min={today}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">{t('checkOut')}</label>
-                <Input type="date" value={checkOutDate} onChange={(e) => setCheckOutDate(e.target.value)} />
+                <Input
+                  type="date"
+                  value={checkOutDate}
+                  onChange={(e) => setCheckOutDate(e.target.value)}
+                  min={checkInDate || today}
+                />
               </div>
             </div>
 
@@ -165,7 +192,7 @@ export function HotelBooking() {
               />
             </div>
 
-            {checkInDate && checkOutDate && (
+            {checkInDate && checkOutDate && calculateNights() > 0 && (
               <div className="bg-muted p-4 rounded-lg space-y-2">
                 <div className="flex justify-between">
                   <span>{t('nights')}:</span>
@@ -183,7 +210,8 @@ export function HotelBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              {t('addToCart')}
+              <CreditCard className="w-4 h-4 mr-2" />
+              Rezervasyon Yap ve Öde
             </Button>
           </CardContent>
         </Card>

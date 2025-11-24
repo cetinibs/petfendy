@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useTranslations } from 'next-intl'
@@ -12,38 +12,37 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { addToCart, getCart } from "@/lib/storage"
+import { DirectCheckout } from "@/components/direct-checkout"
 import { mockHotelRooms, mockTaxiServices, mockTurkishCities } from "@/lib/mock-data"
 import type { HotelRoom, TaxiService } from "@/lib/types"
-import { 
-  Home, 
-  Award, 
-  Users, 
+import {
+  Home,
+  Award,
+  Users,
   Calendar,
   Star,
   Check,
-  ShoppingCart,
   ChevronRight,
   PawPrint,
   Heart,
   Shield,
   Car,
   MapPin,
-  Clock
+  Clock,
+  CreditCard
 } from "lucide-react"
 
 export default function HomePage() {
   const t = useTranslations('hotel')
-  const tCommon = useTranslations('common')
   const router = useRouter()
-  
+
   // Hotel states
   const [rooms] = useState<HotelRoom[]>(mockHotelRooms)
   const [selectedRoom, setSelectedRoom] = useState<HotelRoom | null>(null)
   const [checkInDate, setCheckInDate] = useState("")
   const [checkOutDate, setCheckOutDate] = useState("")
   const [specialRequests, setSpecialRequests] = useState("")
-  
+
   // Taxi states
   const [taxiServices] = useState<TaxiService[]>(mockTaxiServices)
   const [selectedService, setSelectedService] = useState<TaxiService | null>(null)
@@ -54,25 +53,19 @@ export default function HomePage() {
   const [pickupDate, setPickupDate] = useState("")
   const [pickupTime, setPickupTime] = useState("")
   const [petCount, setPetCount] = useState(1)
-  
+
   // Common states
   const [showReservation, setShowReservation] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
-  const [cartItemCount, setCartItemCount] = useState(0)
-  
-  // Update cart count
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const updateCount = () => {
-        setCartItemCount(getCart().length)
-      }
-      updateCount()
-      
-      window.addEventListener('cartUpdated', updateCount)
-      return () => window.removeEventListener('cartUpdated', updateCount)
-    }
-  }, [])
+
+  // Checkout modal state
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    type: "hotel" | "taxi"
+    itemId: string
+    price: number
+    details: Record<string, any>
+  } | null>(null)
 
   const stats = [
     { icon: Users, label: "Misafir Edilen Dostlar", value: "1000+" },
@@ -122,9 +115,8 @@ export default function HomePage() {
     }, 100)
   }
 
-  const handleAddHotelToCart = () => {
+  const handleHotelBooking = () => {
     setError("")
-    setSuccess("")
 
     if (!selectedRoom) {
       setError(t('selectRoomError'))
@@ -147,41 +139,32 @@ export default function HomePage() {
     const nights = calculateNights()
     const total = calculateTotal()
 
-    const cartItem = {
-      id: `hotel-${Date.now()}`,
-      type: "hotel" as const,
+    // Set booking details and open checkout modal
+    setBookingDetails({
+      type: "hotel",
       itemId: selectedRoom.id,
-      quantity: nights,
       price: total,
       details: {
         roomName: selectedRoom.name,
         checkInDate,
         checkOutDate,
+        nights,
         specialRequests,
         pricePerNight: selectedRoom.pricePerNight,
       },
-    }
-
-    addToCart(cartItem)
-    setSuccess(t('addedToCart', { roomName: selectedRoom.name }))
-    
-    // Show toast notification
-    toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedRoom.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
-      duration: 3000,
     })
+    setShowCheckout(true)
   }
 
   const calculateDistance = (): number => {
     // Mock distance calculation - in real app, this would use a mapping service
     if (!pickupCity || !dropoffCity) return 0
-    
+
     // If same city, random distance between 5-30km
     if (pickupCity === dropoffCity) {
       return Math.floor(Math.random() * 25) + 5
     }
-    
+
     // If different cities, random distance between 100-600km
     return Math.floor(Math.random() * 500) + 100
   }
@@ -192,9 +175,8 @@ export default function HomePage() {
     return selectedService.pricePerKm * distance
   }
 
-  const handleAddTaxiToCart = () => {
+  const handleTaxiBooking = () => {
     setError("")
-    setSuccess("")
 
     if (!selectedService) {
       setError("Lütfen bir taksi servisi seçin")
@@ -219,39 +201,65 @@ export default function HomePage() {
     const distance = calculateDistance()
     const total = calculateTaxiTotal()
 
-    const cartItem = {
-      id: `taxi-${Date.now()}`,
-      type: "taxi" as const,
+    // Set booking details and open checkout modal
+    setBookingDetails({
+      type: "taxi",
       itemId: selectedService.id,
-      quantity: distance,
       price: total,
       details: {
         serviceName: selectedService.name,
-        pickupCity,
-        dropoffCity,
-        pickupLocation,
-        dropoffLocation,
-        pickupDate,
-        pickupTime,
+        pickupLocation: pickupCity,
+        dropoffLocation: dropoffCity,
+        pickupAddress: pickupLocation,
+        dropoffAddress: dropoffLocation,
+        scheduledDate: `${pickupDate} ${pickupTime}`,
         petCount,
         distance,
         pricePerKm: selectedService.pricePerKm,
+        isRoundTrip: false,
       },
-    }
+    })
+    setShowCheckout(true)
+  }
 
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepetinize eklendi`)
-    
-    // Show toast notification
+  const handleCheckoutSuccess = () => {
+    // Reset forms after successful checkout
+    setSelectedRoom(null)
+    setCheckInDate("")
+    setCheckOutDate("")
+    setSpecialRequests("")
+    setSelectedService(null)
+    setPickupCity("")
+    setDropoffCity("")
+    setPickupLocation("")
+    setDropoffLocation("")
+    setPickupDate("")
+    setPickupTime("")
+    setPetCount(1)
+    setBookingDetails(null)
+
     toast({
-      title: "✅ Sepete Eklendi!",
-      description: `${selectedService.name} sepetinize eklendi. Sepete gidip siparişi tamamlayabilirsiniz.`,
-      duration: 3000,
+      title: "Rezervasyon Tamamlandı!",
+      description: "Rezervasyonunuz başarıyla oluşturuldu.",
+      duration: 5000,
     })
   }
 
+  // Get minimum date (today)
+  const today = new Date().toISOString().split('T')[0]
+
   return (
     <div className="min-h-screen bg-background">
+      {/* Checkout Modal */}
+      {bookingDetails && (
+        <DirectCheckout
+          isOpen={showCheckout}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={handleCheckoutSuccess}
+          booking={bookingDetails}
+        />
+      )}
+
       {/* Header / Navigation */}
       <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
@@ -271,19 +279,8 @@ export default function HomePage() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex gap-2 items-center">
-            <Button 
-              variant="outline" 
-              className="gap-2"
-              onClick={() => router.push('/tr')}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              <span className="hidden sm:inline">Sepet</span>
-              {cartItemCount > 0 && (
-                <Badge variant="destructive" className="ml-1">{cartItemCount}</Badge>
-              )}
-            </Button>
             <Button onClick={() => router.push('/tr')}>
               Giriş Yap
             </Button>
@@ -301,8 +298,8 @@ export default function HomePage() {
             <p className="text-xl text-muted-foreground mb-8">
               Ankara'nın kedi, köpek ve evcil hayvan oteli
             </p>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="gap-2"
               onClick={handleReservationClick}
             >
@@ -435,29 +432,24 @@ export default function HomePage() {
                           <AlertDescription>{error}</AlertDescription>
                         </Alert>
                       )}
-                      {success && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <AlertDescription className="text-green-800">{success}</AlertDescription>
-                        </Alert>
-                      )}
 
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-sm font-medium">{t('checkIn')}</label>
-                          <Input 
-                            type="date" 
-                            value={checkInDate} 
+                          <Input
+                            type="date"
+                            value={checkInDate}
                             onChange={(e) => setCheckInDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
+                            min={today}
                           />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-medium">{t('checkOut')}</label>
-                          <Input 
-                            type="date" 
-                            value={checkOutDate} 
+                          <Input
+                            type="date"
+                            value={checkOutDate}
                             onChange={(e) => setCheckOutDate(e.target.value)}
-                            min={checkInDate || new Date().toISOString().split('T')[0]}
+                            min={checkInDate || today}
                           />
                         </div>
                       </div>
@@ -472,7 +464,7 @@ export default function HomePage() {
                         />
                       </div>
 
-                      {checkInDate && checkOutDate && (
+                      {checkInDate && checkOutDate && calculateNights() > 0 && (
                         <div className="bg-primary/5 p-4 rounded-lg space-y-2">
                           <div className="flex justify-between">
                             <span>{t('nights')}:</span>
@@ -489,18 +481,15 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      <Button 
-                        onClick={handleAddHotelToCart} 
-                        className="w-full" 
+                      <Button
+                        onClick={handleHotelBooking}
+                        className="w-full"
                         size="lg"
-                        disabled={!checkInDate || !checkOutDate}
+                        disabled={!checkInDate || !checkOutDate || calculateNights() <= 0}
                       >
-                        {t('addToCart')}
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Rezervasyon Yap ve Öde
                       </Button>
-                      
-                      <p className="text-xs text-center text-muted-foreground">
-                        Rezervasyonu tamamlamak için giriş yapmanız gerekecektir
-                      </p>
                     </CardContent>
                   </Card>
                 )}
@@ -573,11 +562,6 @@ export default function HomePage() {
                           <AlertDescription>{error}</AlertDescription>
                         </Alert>
                       )}
-                      {success && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <AlertDescription className="text-green-800">{success}</AlertDescription>
-                        </Alert>
-                      )}
 
                       <div className="space-y-4">
                         {/* City Selection */}
@@ -627,10 +611,10 @@ export default function HomePage() {
                               <MapPin className="w-4 h-4" />
                               Kalkış Adresi
                             </label>
-                            <Input 
-                              type="text" 
+                            <Input
+                              type="text"
                               placeholder="Detaylı kalkış adresi"
-                              value={pickupLocation} 
+                              value={pickupLocation}
                               onChange={(e) => setPickupLocation(e.target.value)}
                             />
                           </div>
@@ -639,10 +623,10 @@ export default function HomePage() {
                               <MapPin className="w-4 h-4" />
                               Varış Adresi
                             </label>
-                            <Input 
-                              type="text" 
+                            <Input
+                              type="text"
                               placeholder="Detaylı varış adresi"
-                              value={dropoffLocation} 
+                              value={dropoffLocation}
                               onChange={(e) => setDropoffLocation(e.target.value)}
                             />
                           </div>
@@ -655,11 +639,11 @@ export default function HomePage() {
                             <Calendar className="w-4 h-4" />
                             Tarih
                           </label>
-                          <Input 
-                            type="date" 
-                            value={pickupDate} 
+                          <Input
+                            type="date"
+                            value={pickupDate}
                             onChange={(e) => setPickupDate(e.target.value)}
-                            min={new Date().toISOString().split('T')[0]}
+                            min={today}
                           />
                         </div>
                         <div className="space-y-2">
@@ -667,9 +651,9 @@ export default function HomePage() {
                             <Clock className="w-4 h-4" />
                             Saat
                           </label>
-                          <Input 
-                            type="time" 
-                            value={pickupTime} 
+                          <Input
+                            type="time"
+                            value={pickupTime}
                             onChange={(e) => setPickupTime(e.target.value)}
                           />
                         </div>
@@ -680,11 +664,11 @@ export default function HomePage() {
                           <PawPrint className="w-4 h-4" />
                           Evcil Hayvan Sayısı
                         </label>
-                        <Input 
-                          type="number" 
-                          min="1" 
+                        <Input
+                          type="number"
+                          min="1"
                           max={selectedService.capacity}
-                          value={petCount} 
+                          value={petCount}
                           onChange={(e) => setPetCount(parseInt(e.target.value) || 1)}
                         />
                       </div>
@@ -710,18 +694,15 @@ export default function HomePage() {
                         </div>
                       )}
 
-                      <Button 
-                        onClick={handleAddTaxiToCart} 
-                        className="w-full" 
+                      <Button
+                        onClick={handleTaxiBooking}
+                        className="w-full"
                         size="lg"
                         disabled={!pickupCity || !dropoffCity || !pickupLocation || !dropoffLocation || !pickupDate || !pickupTime}
                       >
-                        Sepete Ekle
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Rezervasyon Yap ve Öde
                       </Button>
-                      
-                      <p className="text-xs text-center text-muted-foreground">
-                        Rezervasyonu tamamlamak için giriş yapmanız gerekecektir
-                      </p>
                     </CardContent>
                   </Card>
                 )}
@@ -741,8 +722,8 @@ export default function HomePage() {
             Kafessiz konaklama, profesyonel eğitim ve özenli bakım hizmetlerimiz ile
             evcil dostlarınız güvende
           </p>
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             variant="secondary"
             onClick={handleReservationClick}
           >
@@ -791,4 +772,3 @@ export default function HomePage() {
     </div>
   )
 }
-
