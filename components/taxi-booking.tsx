@@ -3,13 +3,15 @@
 import { useState } from "react"
 import type { TaxiService, CityPricing } from "@/lib/types"
 import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
-import { addToCart } from "@/lib/storage"
+import { DirectCheckout } from "@/components/direct-checkout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { toast } from "@/components/ui/use-toast"
+import { CreditCard } from "lucide-react"
 
 export function TaxiBooking() {
   const [services] = useState<TaxiService[]>(mockTaxiServices)
@@ -20,23 +22,31 @@ export function TaxiBooking() {
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
+
+  // Checkout modal state
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [bookingDetails, setBookingDetails] = useState<{
+    type: "taxi"
+    itemId: string
+    price: number
+    details: Record<string, any>
+  } | null>(null)
 
   // Calculate distance based on city pairs or use default
   const getDistance = (): number => {
     if (!fromCity || !toCity) return 0
-    
+
     // Check if there's a predefined city pricing
     const cityPricing = cityPricings.find(
-      (cp) => 
+      (cp) =>
         (cp.fromCity === fromCity && cp.toCity === toCity) ||
         (cp.fromCity === toCity && cp.toCity === fromCity)
     )
-    
+
     if (cityPricing) {
       return cityPricing.distanceKm
     }
-    
+
     // Default distance for same city or unknown pairs
     if (fromCity === toCity) return 20
     return 100 // Default distance for unknown city pairs
@@ -44,9 +54,9 @@ export function TaxiBooking() {
 
   const getCityPricing = (): CityPricing | null => {
     if (!fromCity || !toCity) return null
-    
+
     return cityPricings.find(
-      (cp) => 
+      (cp) =>
         (cp.fromCity === fromCity && cp.toCity === toCity) ||
         (cp.fromCity === toCity && cp.toCity === fromCity)
     ) || null
@@ -54,34 +64,33 @@ export function TaxiBooking() {
 
   const calculatePrice = (): number => {
     if (!selectedService || !fromCity || !toCity) return 0
-    
+
     const distance = getDistance()
     const cityPricing = getCityPricing()
-    
+
     // Calculate base price: basePrice + (distance * pricePerKm)
     let totalPrice = selectedService.basePrice + (selectedService.pricePerKm * distance)
-    
+
     // Apply round trip multiplier (2x for return journey)
     if (isRoundTrip) {
       totalPrice *= 2
     }
-    
+
     // Apply city-specific additional fees
     if (cityPricing) {
       totalPrice += cityPricing.additionalFee
-      
+
       // Apply discount if available
       if (cityPricing.discount > 0) {
         totalPrice -= (totalPrice * cityPricing.discount) / 100
       }
     }
-    
+
     return totalPrice
   }
 
   const handleBooking = () => {
     setError("")
-    setSuccess("")
 
     if (!selectedService) {
       setError("Lütfen bir taksi hizmeti seçin")
@@ -101,12 +110,11 @@ export function TaxiBooking() {
     const distance = getDistance()
     const price = calculatePrice()
     const cityPricing = getCityPricing()
-    
-    const cartItem = {
-      id: `taxi-${Date.now()}`,
-      type: "taxi" as const,
+
+    // Set booking details and open checkout modal
+    setBookingDetails({
+      type: "taxi",
       itemId: selectedService.id,
-      quantity: 1,
       price,
       details: {
         serviceName: selectedService.name,
@@ -120,26 +128,50 @@ export function TaxiBooking() {
         additionalFee: cityPricing?.additionalFee || 0,
         discount: cityPricing?.discount || 0,
       },
-    }
+    })
+    setShowCheckout(true)
+  }
 
-    addToCart(cartItem)
-    setSuccess(`${selectedService.name} sepete eklendi!`)
+  const handleCheckoutSuccess = () => {
+    // Reset form after successful checkout
     setSelectedService(null)
     setFromCity("")
     setToCity("")
     setIsRoundTrip(false)
     setScheduledDate("")
+    setBookingDetails(null)
+
+    toast({
+      title: "Rezervasyon Tamamlandı!",
+      description: "Taksi rezervasyonunuz başarıyla oluşturuldu.",
+      duration: 5000,
+    })
   }
+
+  // Get minimum datetime (now)
+  const now = new Date()
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  const minDateTime = now.toISOString().slice(0, 16)
 
   return (
     <div className="space-y-6">
+      {/* Checkout Modal */}
+      {bookingDetails && (
+        <DirectCheckout
+          isOpen={showCheckout}
+          onClose={() => setShowCheckout(false)}
+          onSuccess={handleCheckoutSuccess}
+          booking={bookingDetails}
+        />
+      )}
+
       <div>
         <h2 className="text-2xl font-bold mb-4">Hayvan Taksi Hizmeti</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {services.map((service) => (
             <Card
               key={service.id}
-              className={`cursor-pointer transition-all ${
+              className={`cursor-pointer transition-all hover:shadow-lg ${
                 selectedService?.id === service.id ? "ring-2 ring-primary" : ""
               }`}
               onClick={() => setSelectedService(service)}
@@ -175,11 +207,6 @@ export function TaxiBooking() {
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            {success && (
-              <Alert>
-                <AlertDescription className="text-green-600">{success}</AlertDescription>
               </Alert>
             )}
 
@@ -224,7 +251,12 @@ export function TaxiBooking() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Tarih ve Saat</label>
-              <Input type="datetime-local" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
+              <Input
+                type="datetime-local"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                min={minDateTime}
+              />
             </div>
 
             {fromCity && toCity && (
@@ -271,7 +303,8 @@ export function TaxiBooking() {
             )}
 
             <Button onClick={handleBooking} className="w-full" size="lg">
-              Sepete Ekle
+              <CreditCard className="w-4 h-4 mr-2" />
+              Rezervasyon Yap ve Öde
             </Button>
           </CardContent>
         </Card>
