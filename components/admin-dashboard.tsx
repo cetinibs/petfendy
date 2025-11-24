@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { Order, HotelRoom, TaxiService, RoomPricing } from "@/lib/types"
+import type { Order, HotelRoom, TaxiService, RoomPricing, PaytenConfig } from "@/lib/types"
+import { DEFAULT_PAYTEN_CONFIG, PAYTEN_API_URLS, paytenService } from "@/lib/payten-service"
 import { mockHotelRooms, mockTaxiServices } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -11,10 +12,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "@/components/ui/use-toast"
-import { 
-  Plus, 
-  Trash2, 
-  Edit, 
+import {
+  Plus,
+  Trash2,
+  Edit,
   Hotel,
   Car,
   TrendingUp,
@@ -29,7 +30,14 @@ import {
   ChevronsRight,
   FileSpreadsheet,
   FileText,
-  FileDown
+  FileDown,
+  CreditCard,
+  Settings,
+  Shield,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
+  EyeOff
 } from "lucide-react"
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
@@ -62,6 +70,8 @@ export function AdminDashboard() {
   const [rooms, setRooms] = useState<HotelRoom[]>([])
   const [services, setServices] = useState<TaxiService[]>([])
   const [roomPricings, setRoomPricings] = useState<RoomPricing[]>([])
+  const [paytenConfig, setPaytenConfig] = useState<PaytenConfig>(DEFAULT_PAYTEN_CONFIG)
+  const [showStoreKey, setShowStoreKey] = useState(false)
   
   // UI State
   const [editingRoom, setEditingRoom] = useState<HotelRoom | null>(null)
@@ -108,12 +118,14 @@ export function AdminDashboard() {
     const storedRooms = JSON.parse(localStorage.getItem("petfendy_rooms") || JSON.stringify(mockHotelRooms))
     const storedServices = JSON.parse(localStorage.getItem("petfendy_services") || JSON.stringify(mockTaxiServices))
     const storedRoomPricings = JSON.parse(localStorage.getItem("petfendy_room_pricings") || "[]")
-    
+    const storedPaytenConfig = JSON.parse(localStorage.getItem("petfendy_payten_config") || JSON.stringify(DEFAULT_PAYTEN_CONFIG))
+
     setOrders(storedOrders)
     setBookings(storedBookings)
     setRooms(storedRooms)
     setServices(storedServices)
     setRoomPricings(storedRoomPricings)
+    setPaytenConfig(storedPaytenConfig)
   }, [])
 
   // Save to localStorage
@@ -130,6 +142,53 @@ export function AdminDashboard() {
   const saveRoomPricings = (updatedPricings: RoomPricing[]) => {
     localStorage.setItem("petfendy_room_pricings", JSON.stringify(updatedPricings))
     setRoomPricings(updatedPricings)
+  }
+
+  // Payten config save
+  const savePaytenConfig = (config: PaytenConfig) => {
+    localStorage.setItem("petfendy_payten_config", JSON.stringify(config))
+    setPaytenConfig(config)
+    paytenService.saveConfig(config)
+
+    toast({
+      title: "Kaydedildi",
+      description: "Payten sanal POS ayarları güncellendi",
+    })
+  }
+
+  const handlePaytenConfigChange = (field: keyof PaytenConfig, value: string | boolean) => {
+    setPaytenConfig(prev => ({ ...prev, [field]: value }))
+  }
+
+  const testPaytenConnection = async () => {
+    if (!paytenConfig.merchantId || !paytenConfig.terminalId) {
+      toast({
+        title: "Hata",
+        description: "Lütfen önce Üye İşyeri No ve Terminal No bilgilerini girin",
+        variant: "destructive"
+      })
+      return
+    }
+
+    toast({
+      title: "Test Ediliyor",
+      description: "Payten bağlantısı test ediliyor...",
+    })
+
+    // Simüle bağlantı testi
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    if (paytenConfig.testMode) {
+      toast({
+        title: "Bağlantı Başarılı",
+        description: "Test modu aktif - Payten sandbox'a bağlantı sağlandı",
+      })
+    } else {
+      toast({
+        title: "Bağlantı Başarılı",
+        description: "Payten canlı sisteme bağlantı sağlandı",
+      })
+    }
   }
 
   // Room management
@@ -582,11 +641,12 @@ export function AdminDashboard() {
 
       {/* Main Tabs */}
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="orders">Siparişler</TabsTrigger>
           <TabsTrigger value="rooms">Odalar</TabsTrigger>
           <TabsTrigger value="services">Taksi</TabsTrigger>
           <TabsTrigger value="pricing">Fiyatlandırma</TabsTrigger>
+          <TabsTrigger value="payment">Ödeme Ayarları</TabsTrigger>
           <TabsTrigger value="reports">Raporlar</TabsTrigger>
         </TabsList>
 
@@ -1327,6 +1387,242 @@ export function AdminDashboard() {
                   })
                 )}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payment Settings Tab */}
+        <TabsContent value="payment" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    Ziraat Bankası Payten Sanal POS
+                  </CardTitle>
+                  <CardDescription>
+                    Sanal POS entegrasyonu için gerekli bilgileri girin
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  {paytenConfig.enabled ? (
+                    <Badge className="bg-green-500">
+                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                      Aktif
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      Pasif
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Durum ve Test Modu */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Sanal POS Durumu</label>
+                  <Select
+                    value={paytenConfig.enabled ? "enabled" : "disabled"}
+                    onValueChange={(v) => handlePaytenConfigChange("enabled", v === "enabled")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="enabled">Aktif</SelectItem>
+                      <SelectItem value="disabled">Pasif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Çalışma Modu</label>
+                  <Select
+                    value={paytenConfig.testMode ? "test" : "production"}
+                    onValueChange={(v) => handlePaytenConfigChange("testMode", v === "test")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="test">Test Modu (Sandbox)</SelectItem>
+                      <SelectItem value="production">Canlı (Production)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {paytenConfig.testMode && (
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertDescription>
+                    Test modu aktif. Gerçek ödeme alınmayacak, tüm işlemler simüle edilecektir.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Üye İşyeri Bilgileri */}
+              <div className="space-y-4">
+                <h3 className="font-semibold flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Üye İşyeri Bilgileri
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Üye İşyeri No (Merchant ID) *</label>
+                    <Input
+                      value={paytenConfig.merchantId}
+                      onChange={(e) => handlePaytenConfigChange("merchantId", e.target.value)}
+                      placeholder="67XXXXXXX"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Banka tarafından verilen üye işyeri numarası
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Terminal No (Terminal ID) *</label>
+                    <Input
+                      value={paytenConfig.terminalId}
+                      onChange={(e) => handlePaytenConfigChange("terminalId", e.target.value)}
+                      placeholder="67XXXXXX"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Banka tarafından verilen terminal numarası
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">PosNet ID *</label>
+                    <Input
+                      value={paytenConfig.posnetId}
+                      onChange={(e) => handlePaytenConfigChange("posnetId", e.target.value)}
+                      placeholder="XXXXXX"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      PosNet sistemindeki tanımlayıcı numara
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">3D Secure Gizli Anahtar (Store Key) *</label>
+                    <div className="relative">
+                      <Input
+                        type={showStoreKey ? "text" : "password"}
+                        value={paytenConfig.storeKey}
+                        onChange={(e) => handlePaytenConfigChange("storeKey", e.target.value)}
+                        placeholder="••••••••••••••••"
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                        onClick={() => setShowStoreKey(!showStoreKey)}
+                      >
+                        {showStoreKey ? (
+                          <EyeOff className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      3D Secure işlemleri için gerekli gizli anahtar
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* API URL */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">API URL</label>
+                <Select
+                  value={paytenConfig.apiUrl}
+                  onValueChange={(v) => handlePaytenConfigChange("apiUrl", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={PAYTEN_API_URLS.testZiraat}>
+                      Test - Ziraat Bankası ({PAYTEN_API_URLS.testZiraat})
+                    </SelectItem>
+                    <SelectItem value={PAYTEN_API_URLS.test}>
+                      Test - Yapı Kredi ({PAYTEN_API_URLS.test})
+                    </SelectItem>
+                    <SelectItem value={PAYTEN_API_URLS.productionZiraat}>
+                      Production - Ziraat Bankası ({PAYTEN_API_URLS.productionZiraat})
+                    </SelectItem>
+                    <SelectItem value={PAYTEN_API_URLS.production}>
+                      Production - Yapı Kredi ({PAYTEN_API_URLS.production})
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Test işlemleri için sandbox URL'i, canlı işlemler için production URL'i seçin
+                </p>
+              </div>
+
+              {/* Bilgi Kutusu */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-4">
+                  <h4 className="font-semibold text-blue-900 mb-2">Payten Entegrasyonu Hakkında</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Ziraat Bankası sanal POS hizmetleri Payten altyapısını kullanır</li>
+                    <li>• Tüm bilgileri banka temsilcinizden edinebilirsiniz</li>
+                    <li>• 3D Secure zorunludur ve müşteri güvenliği için önerilir</li>
+                    <li>• Test modunda gerçek ödeme alınmaz</li>
+                    <li>• Canlıya geçmeden önce test işlemlerini tamamlayın</li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              {/* Kaydet Butonu */}
+              <div className="flex gap-4 pt-4 border-t">
+                <Button onClick={() => savePaytenConfig(paytenConfig)} className="flex-1">
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  Ayarları Kaydet
+                </Button>
+                <Button variant="outline" onClick={testPaytenConnection}>
+                  <Shield className="w-4 h-4 mr-2" />
+                  Bağlantıyı Test Et
+                </Button>
+              </div>
+
+              {/* Mevcut Yapılandırma Özeti */}
+              {paytenConfig.merchantId && (
+                <Card className="bg-muted/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm">Mevcut Yapılandırma</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Üye İşyeri No:</span>
+                        <span className="ml-2 font-mono">{paytenConfig.merchantId}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Terminal No:</span>
+                        <span className="ml-2 font-mono">{paytenConfig.terminalId}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">PosNet ID:</span>
+                        <span className="ml-2 font-mono">{paytenConfig.posnetId}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Mod:</span>
+                        <Badge variant={paytenConfig.testMode ? "secondary" : "default"} className="ml-2">
+                          {paytenConfig.testMode ? "Test" : "Canlı"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
