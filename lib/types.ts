@@ -146,3 +146,20 @@ export interface Invoice {
   dueDate: Date
   status: "draft" | "sent" | "paid" | "overdue"
 }
+
+// Ziraat Bankası Payten Sanal POS Yapılandırması
+export interface PaytenConfig {
+  merchantId: string          // Üye İş Yeri No
+  terminalId: string          // Terminal No
+  posnetId: string            // PosNet ID
+  storeKey: string            // 3D Secure Gizli Anahtar
+  apiUrl: string              // API URL
+  testMode: boolean           // Test Modu
+  enabled: boolean            // Aktif/Pasif
+}
+
+// Ödeme Ayarları Genel
+export interface PaymentSettings {
+  provider: "payten" | "iyzico" | "paytr" | "none"
+  payten: PaytenConfig
+}
