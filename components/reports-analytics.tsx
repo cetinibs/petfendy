@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { Order } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,7 +14,7 @@ export function ReportsAnalytics() {
     setOrders(storedOrders)
   }, [])
 
-  const calculateStats = () => {
+  const stats = useMemo(() => {
     const totalOrders = orders.length
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0)
     const completedOrders = orders.filter((o) => o.status === "completed").length
@@ -41,11 +41,9 @@ export function ReportsAnalytics() {
       taxiRevenue,
       avgOrderValue,
     }
-  }
+  }, [orders])
 
-  const stats = calculateStats()
-
-  const getMonthlyData = () => {
+  const monthlyData = useMemo(() => {
     const monthlyData: Record<string, number> = {}
 
     orders.forEach((order) => {
@@ -64,9 +62,9 @@ export function ReportsAnalytics() {
         month,
         revenue,
       }))
-  }
+  }, [orders])
 
-  const getServiceBreakdown = () => {
+  const serviceBreakdown = useMemo(() => {
     const breakdown: Record<string, { count: number; revenue: number }> = {}
 
     orders.forEach((order) => {
@@ -87,10 +85,7 @@ export function ReportsAnalytics() {
         ...data,
       }))
       .sort((a, b) => b.revenue - a.revenue)
-  }
-
-  const monthlyData = getMonthlyData()
-  const serviceBreakdown = getServiceBreakdown()
+  }, [orders])
 
   return (
     <div className="space-y-6">
