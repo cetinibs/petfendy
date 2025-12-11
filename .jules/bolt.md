@@ -1,0 +1,3 @@
+## 2024-05-22 - [Auth Polyfill Failure in Client Components]
+**Learning:** Using Node.js-specific libraries like `jsonwebtoken` directly in Next.js Client Components (`"use client"`) causes runtime errors (`Right-hand side of 'instanceof' is not an object`) because webpack polyfills for Node core modules (like `buffer`, `crypto`) are often missing or incomplete in the browser bundle.
+**Action:** When implementing isomorphic auth utilities, always wrap Node-specific logic (like `jwt.sign`) in environment checks (`typeof window === 'undefined'`) and provide a browser-compatible fallback (like a mock token or a Web Crypto API implementation) for development/testing environments.

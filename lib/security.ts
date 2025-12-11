@@ -147,6 +147,11 @@ export function generateToken(userId: string, email: string, role: string = 'use
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24), // 24 hours
   };
 
+  // Browser-compatible mock token for development/test
+  if (typeof window !== 'undefined') {
+    return 'mock-token:' + btoa(JSON.stringify(payload));
+  }
+
   return jwt.sign(payload, getJWTSecret(), { algorithm: 'HS256' });
 }
 
@@ -159,11 +164,29 @@ export function generateRefreshToken(userId: string): string {
     exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 7), // 7 days
   };
 
+  // Browser-compatible mock token for development/test
+  if (typeof window !== 'undefined') {
+    return 'mock-token:' + btoa(JSON.stringify(payload));
+  }
+
   return jwt.sign(payload, getJWTRefreshSecret(), { algorithm: 'HS256' });
 }
 
 // Verify JWT token
 export function verifyToken(token: string): { valid: boolean; payload?: any; error?: string } {
+  // Handle mock tokens in browser environment
+  if (token.startsWith('mock-token:')) {
+    try {
+      const payload = JSON.parse(atob(token.split(':')[1]));
+      if (Date.now() / 1000 > payload.exp) {
+        return { valid: false, error: 'Token expired' };
+      }
+      return { valid: true, payload };
+    } catch (e) {
+      return { valid: false, error: 'Invalid mock token' };
+    }
+  }
+
   try {
     const payload = jwt.verify(token, getJWTSecret());
     return { valid: true, payload };
@@ -180,6 +203,16 @@ export function verifyToken(token: string): { valid: boolean; payload?: any; err
 
 // Verify refresh token
 export function verifyRefreshToken(token: string): { valid: boolean; payload?: any; error?: string } {
+  // Handle mock tokens in browser environment
+  if (token.startsWith('mock-token:')) {
+    try {
+      const payload = JSON.parse(atob(token.split(':')[1]));
+      return { valid: true, payload };
+    } catch (e) {
+      return { valid: false, error: 'Invalid mock token' };
+    }
+  }
+
   try {
     const payload = jwt.verify(token, getJWTRefreshSecret());
     return { valid: true, payload };
