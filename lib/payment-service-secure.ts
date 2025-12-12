@@ -369,7 +369,8 @@ class SecurePaymentService {
     console.log("🔄 [Secure Payment] Processing refund...");
     console.log("Transaction ID:", transactionId);
     console.log("Refund Amount:", amount);
-    console.log("Reason:", sanitizeInput(reason));
+    // Reason masked for security
+    console.log("Reason:", "***");
 
     // Find original payment log
     const originalPayment = this.paymentLogs.find(log => log.transactionId === transactionId);
