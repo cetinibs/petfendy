@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { Order } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,7 +14,7 @@ export function ReportsAnalytics() {
     setOrders(storedOrders)
   }, [])
 
-  const calculateStats = () => {
+  const stats = useMemo(() => {
     const totalOrders = orders.length
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0)
     const completedOrders = orders.filter((o) => o.status === "completed").length
@@ -41,32 +41,30 @@ export function ReportsAnalytics() {
       taxiRevenue,
       avgOrderValue,
     }
-  }
+  }, [orders])
 
-  const stats = calculateStats()
-
-  const getMonthlyData = () => {
-    const monthlyData: Record<string, number> = {}
+  const monthlyData = useMemo(() => {
+    const data: Record<string, number> = {}
 
     orders.forEach((order) => {
       const date = new Date(order.createdAt)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = 0
+      if (!data[monthKey]) {
+        data[monthKey] = 0
       }
-      monthlyData[monthKey] += order.totalPrice
+      data[monthKey] += order.totalPrice
     })
 
-    return Object.entries(monthlyData)
+    return Object.entries(data)
       .sort()
       .map(([month, revenue]) => ({
         month,
         revenue,
       }))
-  }
+  }, [orders])
 
-  const getServiceBreakdown = () => {
+  const serviceBreakdown = useMemo(() => {
     const breakdown: Record<string, { count: number; revenue: number }> = {}
 
     orders.forEach((order) => {
@@ -87,10 +85,7 @@ export function ReportsAnalytics() {
         ...data,
       }))
       .sort((a, b) => b.revenue - a.revenue)
-  }
-
-  const monthlyData = getMonthlyData()
-  const serviceBreakdown = getServiceBreakdown()
+  }, [orders])
 
   return (
     <div className="space-y-6">
