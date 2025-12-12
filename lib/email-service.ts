@@ -51,7 +51,7 @@ class EmailService {
     console.log("From:", fromName, `<${fromEmail}>`)
     console.log("To:", template.to)
     console.log("Subject:", template.subject)
-    console.log("Content:", template.text || template.html)
+    // Content logging removed for security (PII/Sensitive data protection)
 
     // Simulate API delay
     await new Promise((resolve) => setTimeout(resolve, 500))

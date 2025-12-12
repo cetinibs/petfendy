@@ -107,7 +107,7 @@ class PaymentService {
     }
 
     console.log("💳 [Payment Service] Processing card payment...")
-    console.log("Card Holder:", request.cardDetails.cardHolderName)
+    // Card holder name masked for security
     console.log("Card Number:", "****" + request.cardDetails.cardNumber.slice(-4))
 
     // Validate card number (basic check)
