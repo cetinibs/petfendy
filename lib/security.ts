@@ -54,6 +54,8 @@ export function validateCSRFToken(token: string, storedToken: string): boolean {
 }
 
 // Enhanced input sanitization to prevent XSS
+// NOTE: For rich text content (HTML), use sanitizeHTML from '@/lib/sanitize-html' instead.
+// This function is intended for plain text inputs only and will strip all HTML tags.
 export function sanitizeInput(input: string): string {
   if (!input) return '';
   

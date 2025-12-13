@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/storage"
 import { mockBlogPosts } from "@/lib/mock-data"
 import type { BlogPost } from "@/lib/types"
+import { sanitizeHTML } from "@/lib/sanitize-html"
 import { Calendar, User, ArrowLeft, Tag } from "lucide-react"
 
 export default function BlogDetailPage() {
@@ -120,7 +121,7 @@ export default function BlogDetailPage() {
         {/* Content */}
         <div 
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHTML(post.content) }}
         />
       </article>
 
