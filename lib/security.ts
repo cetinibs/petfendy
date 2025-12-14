@@ -1,5 +1,6 @@
 // Security utilities for Petfendy platform
 import jwt from 'jsonwebtoken';
+import DOMPurify from 'isomorphic-dompurify';
 
 // JWT Secret - MUST be set via environment variable
 // In development, generate with: openssl rand -base64 64
@@ -67,6 +68,18 @@ export function sanitizeInput(input: string): string {
     .replace(/-->/g, "")
     .trim()
     .substring(0, 1000); // Limit length to prevent DoS
+}
+
+// HTML sanitization for rich text content
+export function sanitizeHTML(html: string): string {
+  if (!html) return '';
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre', 'img'
+    ],
+    ALLOWED_ATTR: ['href', 'target', 'rel', 'src', 'alt', 'class', 'style'],
+  });
 }
 
 // HTML entity encoding for safe display
