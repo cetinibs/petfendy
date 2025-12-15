@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter, useParams } from "next/navigation"
 import type { TaxiService, TaxiVehicle, CityPricing } from "@/lib/types"
 import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
@@ -46,27 +46,8 @@ export function TaxiBooking() {
     return () => window.removeEventListener('taxiVehiclesUpdated', handleVehiclesUpdate)
   }, [])
 
-  // Calculate distance based on city pairs or use default
-  const getDistance = (): number => {
-    if (!fromCity || !toCity) return 0
-    
-    // Check if there's a predefined city pricing
-    const cityPricing = cityPricings.find(
-      (cp) => 
-        (cp.fromCity === fromCity && cp.toCity === toCity) ||
-        (cp.fromCity === toCity && cp.toCity === fromCity)
-    )
-    
-    if (cityPricing) {
-      return cityPricing.distanceKm
-    }
-    
-    // Default distance for same city or unknown pairs
-    if (fromCity === toCity) return 20
-    return 100 // Default distance for unknown city pairs
-  }
-
-  const getCityPricing = (): CityPricing | null => {
+  // Memoize city pricing lookup to avoid O(N) search on every render
+  const cityPricing = useMemo((): CityPricing | null => {
     if (!fromCity || !toCity) return null
     
     return cityPricings.find(
@@ -74,37 +55,48 @@ export function TaxiBooking() {
         (cp.fromCity === fromCity && cp.toCity === toCity) ||
         (cp.fromCity === toCity && cp.toCity === fromCity)
     ) || null
-  }
+  }, [fromCity, toCity, cityPricings])
 
-  const calculatePrice = (): number => {
+  // Calculate distance based on city pairs or use default
+  const distance = useMemo((): number => {
+    if (!fromCity || !toCity) return 0
+    
+    // Check if there's a predefined city pricing
+    if (cityPricing) {
+      return cityPricing.distanceKm
+    }
+    
+    // Default distance for same city or unknown pairs
+    if (fromCity === toCity) return 20
+    return 100 // Default distance for unknown city pairs
+  }, [fromCity, toCity, cityPricing])
+
+  const totalPrice = useMemo((): number => {
     if (!selectedService || !fromCity || !toCity) return 0
-
-    const distance = getDistance()
-    const cityPricing = getCityPricing()
 
     // Use vehicle's pricePerKm if selected, otherwise use service's pricePerKm
     const pricePerKm = selectedVehicle ? selectedVehicle.pricePerKm : selectedService.pricePerKm
 
     // Calculate base price: basePrice + (distance * pricePerKm)
-    let totalPrice = selectedService.basePrice + (pricePerKm * distance)
+    let price = selectedService.basePrice + (pricePerKm * distance)
 
     // Apply round trip multiplier (2x for return journey)
     if (isRoundTrip) {
-      totalPrice *= 2
+      price *= 2
     }
 
     // Apply city-specific additional fees
     if (cityPricing) {
-      totalPrice += cityPricing.additionalFee
+      price += cityPricing.additionalFee
 
       // Apply discount if available
       if (cityPricing.discount > 0) {
-        totalPrice -= (totalPrice * cityPricing.discount) / 100
+        price -= (price * cityPricing.discount) / 100
       }
     }
 
-    return totalPrice
-  }
+    return price
+  }, [selectedService, fromCity, toCity, distance, cityPricing, selectedVehicle, isRoundTrip])
 
   const handleBooking = () => {
     setError("")
@@ -130,10 +122,6 @@ export function TaxiBooking() {
       return
     }
 
-    const distance = getDistance()
-    const price = calculatePrice()
-    const cityPricing = getCityPricing()
-
     // Store taxi reservation temporarily
     const taxiReservation = {
       serviceName: selectedService.name,
@@ -149,7 +137,7 @@ export function TaxiBooking() {
       pricePerKm: selectedVehicle.pricePerKm,
       additionalFee: cityPricing?.additionalFee || 0,
       discount: cityPricing?.discount || 0,
-      totalPrice: price,
+      totalPrice: totalPrice,
     }
 
     if (typeof window !== 'undefined') {
@@ -334,16 +322,16 @@ export function TaxiBooking() {
               <div className="bg-muted p-4 rounded-lg space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Mesafe:</span>
-                  <span className="font-semibold">{getDistance()} km</span>
+                  <span className="font-semibold">{distance} km</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span>Başlangıç Ücreti:</span>
                   <span className="font-semibold">₺{selectedService.basePrice}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span>Mesafe Ücreti ({getDistance()} km):</span>
+                  <span>Mesafe Ücreti ({distance} km):</span>
                   <span className="font-semibold">
-                    ₺{((selectedVehicle ? selectedVehicle.pricePerKm : selectedService.pricePerKm) * getDistance()).toFixed(2)}
+                    ₺{((selectedVehicle ? selectedVehicle.pricePerKm : selectedService.pricePerKm) * distance).toFixed(2)}
                   </span>
                 </div>
                 {selectedVehicle && (
@@ -358,23 +346,23 @@ export function TaxiBooking() {
                     <span className="font-semibold">x2</span>
                   </div>
                 )}
-                {getCityPricing() && getCityPricing()!.additionalFee > 0 && (
+                {cityPricing && cityPricing.additionalFee > 0 && (
                   <div className="flex justify-between text-sm text-amber-600">
                     <span>Şehirler Arası Ek Ücret:</span>
-                    <span className="font-semibold">₺{getCityPricing()!.additionalFee}</span>
+                    <span className="font-semibold">₺{cityPricing.additionalFee}</span>
                   </div>
                 )}
-                {getCityPricing() && getCityPricing()!.discount > 0 && (
+                {cityPricing && cityPricing.discount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
-                    <span>İndirim ({getCityPricing()!.discount}%):</span>
+                    <span>İndirim ({cityPricing.discount}%):</span>
                     <span className="font-semibold">
-                      -₺{((calculatePrice() / (1 - getCityPricing()!.discount / 100)) * getCityPricing()!.discount / 100).toFixed(2)}
+                      -₺{((totalPrice / (1 - cityPricing.discount / 100)) * cityPricing.discount / 100).toFixed(2)}
                     </span>
                   </div>
                 )}
                 <div className="border-t pt-2 flex justify-between text-lg font-bold">
                   <span>Toplam:</span>
-                  <span className="text-primary">₺{calculatePrice().toFixed(2)}</span>
+                  <span className="text-primary">₺{totalPrice.toFixed(2)}</span>
                 </div>
               </div>
             )}
