@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import type { Order, HotelRoom, TaxiService, TaxiVehicle, RoomPricing, AboutPage, PaymentGateway, PayTRConfig, ParatikaConfig } from "@/lib/types"
 import { mockHotelRooms, mockTaxiServices } from "@/lib/mock-data"
@@ -637,43 +637,8 @@ export function AdminDashboard() {
     })
   }
 
-  // Revenue calculations
-  const calculateRevenue = (
-    type: "hotel" | "taxi" | "all",
-    period: "daily" | "weekly" | "monthly"
-  ) => {
-    const now = new Date()
-    let startDate = new Date()
-    
-    switch (period) {
-      case "daily":
-        startDate.setHours(0, 0, 0, 0)
-        break
-      case "weekly":
-        startDate.setDate(now.getDate() - 7)
-        break
-      case "monthly":
-        startDate.setMonth(now.getMonth() - 1)
-        break
-    }
-
-    const filteredBookings = bookings.filter(b => {
-      const bookingDate = new Date(b.createdAt)
-      const matchesDate = bookingDate >= startDate
-      const matchesType = type === "all" || b.type === type
-      const isCompleted = b.status === "confirmed" || b.status === "completed"
-      
-      return matchesDate && matchesType && isCompleted
-    })
-
-    const revenue = filteredBookings.reduce((sum, b) => sum + b.totalPrice, 0)
-    const count = filteredBookings.length
-    
-    return { revenue, count }
-  }
-
-  // Filtered orders
-  const getFilteredOrders = () => {
+  // ⚡ Performance Optimization: Memoize filtered orders to prevent expensive sorting/filtering on every render
+  const filteredOrders = useMemo(() => {
     let filtered = [...orders]
     
     if (orderFilter !== "all") {
@@ -688,18 +653,17 @@ export function AdminDashboard() {
     })
     
     return filtered
-  }
+  }, [orders, orderFilter])
 
-  // Paginated orders
-  const getPaginatedOrders = () => {
-    const filtered = getFilteredOrders()
+  // ⚡ Performance Optimization: Memoize pagination slice
+  const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return filtered.slice(startIndex, endIndex)
-  }
+    return filteredOrders.slice(startIndex, endIndex)
+  }, [filteredOrders, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(getFilteredOrders().length / itemsPerPage)
-  const totalOrders = getFilteredOrders().length
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+  const totalOrders = filteredOrders.length
 
   // Pagination handlers
   const goToFirstPage = () => setCurrentPage(1)
@@ -714,7 +678,6 @@ export function AdminDashboard() {
 
   // Export functions
   const exportToExcel = () => {
-    const filteredOrders = getFilteredOrders()
     const data = filteredOrders.map(order => ({
       'Fatura No': order.invoiceNumber,
       'Tarih': new Date(order.createdAt).toLocaleString("tr-TR"),
@@ -745,7 +708,6 @@ export function AdminDashboard() {
   }
 
   const exportToCSV = () => {
-    const filteredOrders = getFilteredOrders()
     const headers = ['Fatura No', 'Tarih', 'Müşteri ID', 'Ürün Sayısı', 'Toplam Tutar', 'Durum', 'Ürünler']
     
     const csvContent = [
@@ -784,7 +746,6 @@ export function AdminDashboard() {
   }
 
   const exportToPDF = () => {
-    const filteredOrders = getFilteredOrders()
     const doc = new jsPDF('l', 'mm', 'a4') // landscape orientation
     
     // Title
@@ -827,10 +788,59 @@ export function AdminDashboard() {
     })
   }
 
+  // ⚡ Performance Optimization: Memoize revenue stats calculation (single pass O(N) instead of multiple O(N))
+  const revenueStats = useMemo(() => {
+    const stats = {
+        daily: { hotel: { revenue: 0, count: 0 }, taxi: { revenue: 0, count: 0 }, all: { revenue: 0, count: 0 } },
+        weekly: { hotel: { revenue: 0, count: 0 }, taxi: { revenue: 0, count: 0 }, all: { revenue: 0, count: 0 } },
+        monthly: { hotel: { revenue: 0, count: 0 }, taxi: { revenue: 0, count: 0 }, all: { revenue: 0, count: 0 } }
+    };
+
+    const now = new Date();
+    const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+    const weekStart = new Date(now); weekStart.setDate(now.getDate() - 7);
+    const monthStart = new Date(now); monthStart.setMonth(now.getMonth() - 1);
+
+    bookings.forEach(b => {
+        const isCompleted = b.status === "confirmed" || b.status === "completed"
+        if (!isCompleted) return;
+
+        const date = new Date(b.createdAt);
+        const type = b.type; // "hotel" or "taxi"
+
+        // Safety check to ensure type exists in stats
+        if (!stats.daily[type]) return;
+
+        // Daily
+        if (date >= todayStart) {
+            stats.daily[type].revenue += b.totalPrice;
+            stats.daily[type].count++;
+            stats.daily.all.revenue += b.totalPrice;
+            stats.daily.all.count++;
+        }
+        // Weekly
+        if (date >= weekStart) {
+             stats.weekly[type].revenue += b.totalPrice;
+             stats.weekly[type].count++;
+             stats.weekly.all.revenue += b.totalPrice;
+             stats.weekly.all.count++;
+        }
+        // Monthly
+        if (date >= monthStart) {
+             stats.monthly[type].revenue += b.totalPrice;
+             stats.monthly[type].count++;
+             stats.monthly.all.revenue += b.totalPrice;
+             stats.monthly.all.count++;
+        }
+    });
+
+    return stats;
+  }, [bookings]);
+
   // Statistics
-  const hotelStats = calculateRevenue("hotel", dateFilter)
-  const taxiStats = calculateRevenue("taxi", dateFilter)
-  const totalStats = calculateRevenue("all", dateFilter)
+  const hotelStats = revenueStats[dateFilter].hotel
+  const taxiStats = revenueStats[dateFilter].taxi
+  const totalStats = revenueStats[dateFilter].all
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -1015,7 +1025,7 @@ export function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {getFilteredOrders().length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Sipariş bulunamadı</p>
@@ -1037,7 +1047,7 @@ export function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getPaginatedOrders().map((order) => (
+                        {paginatedOrders.map((order) => (
                           <TableRow key={order.id} className="hover:bg-muted/30">
                             <TableCell className="font-medium">
                               #{order.invoiceNumber}
@@ -2494,7 +2504,7 @@ export function AdminDashboard() {
                               Otel
                             </span>
                             <span className="font-bold text-blue-600">
-                              ₺{calculateRevenue("hotel", period as any).revenue.toFixed(2)}
+                              ₺{revenueStats[period as keyof typeof revenueStats].hotel.revenue.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
@@ -2503,13 +2513,13 @@ export function AdminDashboard() {
                               Pet Taksi
                             </span>
                             <span className="font-bold text-green-600">
-                              ₺{calculateRevenue("taxi", period as any).revenue.toFixed(2)}
+                              ₺{revenueStats[period as keyof typeof revenueStats].taxi.revenue.toFixed(2)}
                             </span>
                           </div>
                           <div className="flex justify-between items-center pt-2 border-t">
                             <span className="text-sm font-medium">Toplam</span>
                             <span className="font-bold text-primary text-lg">
-                              ₺{calculateRevenue("all", period as any).revenue.toFixed(2)}
+                              ₺{revenueStats[period as keyof typeof revenueStats].all.revenue.toFixed(2)}
                             </span>
                           </div>
                         </div>
