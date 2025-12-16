@@ -1,0 +1,4 @@
+## 2024-05-23 - XSS Prevention in Rich Text
+**Vulnerability:** Unsafe usage of `dangerouslySetInnerHTML` in blog and about pages allowed rendering raw HTML content from storage (potentially user input), creating a Cross-Site Scripting (XSS) risk.
+**Learning:** Manual regex sanitization (`sanitizeInput`) was insufficient for rich text as it stripped all HTML tags, breaking the feature. Next.js does not automatically sanitize `dangerouslySetInnerHTML`.
+**Prevention:** Implemented `sanitizeHTML` using `isomorphic-dompurify`. This library works in both server and client environments and allows configuring a safe list of tags (e.g. allowing `<b>`, `<i>`, but stripping `<script>`). Always use `sanitizeHTML` when rendering rich text.

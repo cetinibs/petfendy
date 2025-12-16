@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/storage"
 import { mockBlogPosts } from "@/lib/mock-data"
+import { sanitizeHTML } from "@/lib/security"
 import type { BlogPost } from "@/lib/types"
 import { Calendar, User, ArrowLeft, Tag } from "lucide-react"
 
@@ -120,7 +121,7 @@ export default function BlogDetailPage() {
         {/* Content */}
         <div 
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHTML(post.content) }}
         />
       </article>
 
