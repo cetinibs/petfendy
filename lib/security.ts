@@ -1,5 +1,6 @@
 // Security utilities for Petfendy platform
 import jwt from 'jsonwebtoken';
+import DOMPurify from 'isomorphic-dompurify';
 
 // JWT Secret - MUST be set via environment variable
 // In development, generate with: openssl rand -base64 64
@@ -53,20 +54,31 @@ export function validateCSRFToken(token: string, storedToken: string): boolean {
   return result === 0;
 }
 
-// Enhanced input sanitization to prevent XSS
+// Enhanced input sanitization using DOMPurify
+// Strips all HTML tags - use for names, emails, etc.
 export function sanitizeInput(input: string): string {
   if (!input) return '';
   
-  return input
-    .replace(/[<>]/g, "") // Remove HTML tags
-    .replace(/javascript:/gi, "") // Remove javascript: protocol
-    .replace(/on\w+\s*=/gi, "") // Remove event handlers
-    .replace(/data:/gi, "") // Remove data: protocol
-    .replace(/vbscript:/gi, "") // Remove vbscript: protocol
-    .replace(/<!--/g, "") // Remove HTML comments
-    .replace(/-->/g, "")
-    .trim()
-    .substring(0, 1000); // Limit length to prevent DoS
+  const clean = DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [], // Strip all tags
+    ALLOWED_ATTR: []
+  });
+
+  return clean.trim().substring(0, 1000); // Limit length to prevent DoS
+}
+
+// Sanitize HTML content for rich text display
+// Allows safe HTML tags but strips scripts/dangerous attributes
+export function sanitizeHTML(content: string): string {
+  if (!content) return '';
+
+  return DOMPurify.sanitize(content, {
+    USE_PROFILES: { html: true },
+    // Add any specific tags/attributes we need to allow that aren't in default profile
+    // Be very careful adding iframe or script!
+    ADD_TAGS: ['img'],
+    ADD_ATTR: ['target']
+  });
 }
 
 // HTML entity encoding for safe display

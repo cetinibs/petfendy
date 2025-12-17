@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
+import { sanitizeHTML } from "@/lib/security"
 import { getPageBySlug } from "@/lib/storage"
 import { mockPages } from "@/lib/mock-data"
 import type { Page } from "@/lib/types"
@@ -60,7 +61,7 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <div 
             className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: pageData.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHTML(pageData.content) }}
           />
         </div>
       </section>

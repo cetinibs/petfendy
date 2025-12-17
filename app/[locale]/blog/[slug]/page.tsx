@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { sanitizeHTML } from "@/lib/security"
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/storage"
 import { mockBlogPosts } from "@/lib/mock-data"
 import type { BlogPost } from "@/lib/types"
@@ -120,7 +121,7 @@ export default function BlogDetailPage() {
         {/* Content */}
         <div 
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHTML(post.content) }}
         />
       </article>
 
