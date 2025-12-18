@@ -57,16 +57,34 @@ export function validateCSRFToken(token: string, storedToken: string): boolean {
 export function sanitizeInput(input: string): string {
   if (!input) return '';
   
-  return input
-    .replace(/[<>]/g, "") // Remove HTML tags
-    .replace(/javascript:/gi, "") // Remove javascript: protocol
-    .replace(/on\w+\s*=/gi, "") // Remove event handlers
-    .replace(/data:/gi, "") // Remove data: protocol
-    .replace(/vbscript:/gi, "") // Remove vbscript: protocol
-    .replace(/<!--/g, "") // Remove HTML comments
-    .replace(/-->/g, "")
-    .trim()
-    .substring(0, 1000); // Limit length to prevent DoS
+  let current = input;
+  let previous = '';
+  let loops = 0;
+  const MAX_LOOPS = 50;
+
+  // Recursive sanitization to prevent nested attacks (e.g. javascripjavascript:t:)
+  // Limit loops to prevent DoS via infinite recursion
+  while (current !== previous && loops < MAX_LOOPS) {
+    previous = current;
+    current = current
+      .replace(/[<>]/g, "") // Remove HTML tags
+      .replace(/javascript:/gi, "") // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, "") // Remove event handlers
+      .replace(/data:/gi, "") // Remove data: protocol
+      .replace(/vbscript:/gi, "") // Remove vbscript: protocol
+      .replace(/<!--/g, "") // Remove HTML comments
+      .replace(/-->/g, "");
+
+    loops++;
+  }
+
+  // If we hit the loop limit, the input is likely malicious or too complex.
+  // Fail secure by returning empty string.
+  if (loops === MAX_LOOPS) {
+    return '';
+  }
+
+  return current.trim().substring(0, 1000); // Limit length to prevent DoS
 }
 
 // HTML entity encoding for safe display
