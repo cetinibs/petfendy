@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { Order } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,19 +14,45 @@ export function ReportsAnalytics() {
     setOrders(storedOrders)
   }, [])
 
-  const calculateStats = () => {
+  const stats = useMemo(() => {
+    let totalRevenue = 0
+    let completedOrders = 0
+    let pendingOrders = 0
+    let paidOrders = 0
+    let hotelOrdersCount = 0
+    let taxiOrdersCount = 0
+    let hotelRevenue = 0
+    let taxiRevenue = 0
+
+    for (const order of orders) {
+      totalRevenue += order.totalPrice
+
+      if (order.status === "completed") completedOrders++
+      else if (order.status === "pending") pendingOrders++
+      else if (order.status === "paid") paidOrders++
+
+      let isHotel = false
+      let isTaxi = false
+
+      // Check items to classify order and sum revenue by type
+      // Note: This matches the original logic where if ANY item is a hotel service,
+      // the entire order's total price is counted towards hotel revenue.
+      for (const item of order.items) {
+        if (item.type === "hotel") isHotel = true
+        if (item.type === "taxi") isTaxi = true
+      }
+
+      if (isHotel) {
+        hotelOrdersCount++
+        hotelRevenue += order.totalPrice
+      }
+      if (isTaxi) {
+        taxiOrdersCount++
+        taxiRevenue += order.totalPrice
+      }
+    }
+
     const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0)
-    const completedOrders = orders.filter((o) => o.status === "completed").length
-    const pendingOrders = orders.filter((o) => o.status === "pending").length
-    const paidOrders = orders.filter((o) => o.status === "paid").length
-
-    const hotelOrders = orders.filter((o) => o.items.some((i) => i.type === "hotel"))
-    const taxiOrders = orders.filter((o) => o.items.some((i) => i.type === "taxi"))
-
-    const hotelRevenue = hotelOrders.reduce((sum, order) => sum + order.totalPrice, 0)
-    const taxiRevenue = taxiOrders.reduce((sum, order) => sum + order.totalPrice, 0)
-
     const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
     return {
@@ -35,51 +61,49 @@ export function ReportsAnalytics() {
       completedOrders,
       pendingOrders,
       paidOrders,
-      hotelOrders: hotelOrders.length,
-      taxiOrders: taxiOrders.length,
+      hotelOrders: hotelOrdersCount,
+      taxiOrders: taxiOrdersCount,
       hotelRevenue,
       taxiRevenue,
       avgOrderValue,
     }
-  }
+  }, [orders])
 
-  const stats = calculateStats()
+  const monthlyData = useMemo(() => {
+    const data: Record<string, number> = {}
 
-  const getMonthlyData = () => {
-    const monthlyData: Record<string, number> = {}
-
-    orders.forEach((order) => {
+    for (const order of orders) {
       const date = new Date(order.createdAt)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = 0
+      if (!data[monthKey]) {
+        data[monthKey] = 0
       }
-      monthlyData[monthKey] += order.totalPrice
-    })
+      data[monthKey] += order.totalPrice
+    }
 
-    return Object.entries(monthlyData)
+    return Object.entries(data)
       .sort()
       .map(([month, revenue]) => ({
         month,
         revenue,
       }))
-  }
+  }, [orders])
 
-  const getServiceBreakdown = () => {
+  const serviceBreakdown = useMemo(() => {
     const breakdown: Record<string, { count: number; revenue: number }> = {}
 
-    orders.forEach((order) => {
-      order.items.forEach((item) => {
-        const serviceName = item.type === "hotel" ? item.details.roomName : item.details.serviceName
+    for (const order of orders) {
+      for (const item of order.items) {
+        const serviceName = item.type === "hotel" ? item.details.roomName : item.details?.serviceName || "Unknown"
 
         if (!breakdown[serviceName]) {
           breakdown[serviceName] = { count: 0, revenue: 0 }
         }
         breakdown[serviceName].count += 1
         breakdown[serviceName].revenue += item.price
-      })
-    })
+      }
+    }
 
     return Object.entries(breakdown)
       .map(([service, data]) => ({
@@ -87,10 +111,7 @@ export function ReportsAnalytics() {
         ...data,
       }))
       .sort((a, b) => b.revenue - a.revenue)
-  }
-
-  const monthlyData = getMonthlyData()
-  const serviceBreakdown = getServiceBreakdown()
+  }, [orders])
 
   return (
     <div className="space-y-6">
