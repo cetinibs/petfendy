@@ -6,6 +6,9 @@ import type { NextRequest } from 'next/server';
 
 // Rate limiting storage (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 60000; // 1 minute
+const MAX_MAP_SIZE = 10000; // Prevent memory exhaustion
 
 // Allowed origins for CORS - configure via environment variable
 const getAllowedOrigins = (): string[] => {
@@ -115,16 +118,27 @@ export function checkRateLimit(
   windowMs: number = 15 * 60 * 1000 // 15 minutes
 ): { allowed: boolean; remaining: number } {
   const now = Date.now();
-  const record = rateLimitStore.get(ip);
 
-  // Clean up old entries
-  if (now % 1000 === 0) { // Every ~1000ms
-    for (const [key, value] of rateLimitStore.entries()) {
-      if (now > value.resetTime) {
-        rateLimitStore.delete(key);
+  // Robust cleanup mechanism
+  if (now - lastCleanup > CLEANUP_INTERVAL) {
+    lastCleanup = now;
+    // Process cleanup in next tick to not block current request
+    setTimeout(() => {
+      for (const [key, value] of rateLimitStore.entries()) {
+        if (now > value.resetTime) {
+          rateLimitStore.delete(key);
+        }
       }
-    }
+    }, 0);
   }
+
+  // Safety valve: Prevent OOM if cleanup isn't keeping up or under attack
+  if (rateLimitStore.size > MAX_MAP_SIZE) {
+    rateLimitStore.clear(); // Emergency clear
+    console.warn('🚨 Rate limit store cleared due to size limit exceeded (DoS protection)');
+  }
+
+  const record = rateLimitStore.get(ip);
 
   if (!record || now > record.resetTime) {
     // New window or expired
