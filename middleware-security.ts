@@ -6,6 +6,9 @@ import type { NextRequest } from 'next/server';
 
 // Rate limiting storage (in production, use Redis or database)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 60 * 1000; // 1 minute
+const MAX_MAP_SIZE = 10000; // Prevent memory exhaustion
 
 // Allowed origins for CORS - configure via environment variable
 const getAllowedOrigins = (): string[] => {
@@ -118,11 +121,17 @@ export function checkRateLimit(
   const record = rateLimitStore.get(ip);
 
   // Clean up old entries
-  if (now % 1000 === 0) { // Every ~1000ms
+  if (now - lastCleanup > CLEANUP_INTERVAL || rateLimitStore.size > MAX_MAP_SIZE) {
     for (const [key, value] of rateLimitStore.entries()) {
       if (now > value.resetTime) {
         rateLimitStore.delete(key);
       }
+    }
+    lastCleanup = now;
+
+    // Hard limit safety valve
+    if (rateLimitStore.size > MAX_MAP_SIZE) {
+      rateLimitStore.clear(); // Emergency cleanup to prevent OOM
     }
   }
 
@@ -204,8 +213,14 @@ export function detectSuspiciousActivity(request: NextRequest): {
     /on\w+\s*=/gi,
   ];
 
-  if (xssPatterns.some(pattern => pattern.test(decodeURIComponent(url)))) {
-    return { suspicious: true, reason: 'XSS attempt' };
+  try {
+    const decodedUrl = decodeURIComponent(url);
+    if (xssPatterns.some(pattern => pattern.test(decodedUrl))) {
+      return { suspicious: true, reason: 'XSS attempt' };
+    }
+  } catch (error) {
+    // URL decoding failed - likely malformed URL which is suspicious
+    return { suspicious: true, reason: 'Malformed URL encoding' };
   }
 
   return { suspicious: false };
