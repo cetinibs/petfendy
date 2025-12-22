@@ -1,5 +1,42 @@
 // Client-side storage management with security considerations
-import type { User, HotelReservationData, Page, BlogPost, GalleryImage, FAQ, ContactMessage } from "./types"
+import type { User, Page, BlogPost, GalleryImage, FAQ, ContactMessage } from "./types"
+
+// Reservation data types
+export interface HotelReservationData {
+  roomId: string
+  roomName: string
+  checkInDate: string
+  checkOutDate: string
+  nights: number
+  petCount: number
+  basePrice: number
+  servicesTotal: number
+  totalPrice: number
+  specialRequests?: string
+  additionalServices: Array<{
+    id: string
+    name: string
+    price: number
+    duration?: string
+  }>
+}
+
+export interface TaxiReservationData {
+  vehicleId?: string
+  vehicleName: string
+  fromCity: string
+  toCity: string
+  distanceKm: number
+  pricePerKm: number
+  isRoundTrip: boolean
+  scheduledDate: string
+  petCount: number
+  basePrice: number
+  totalPrice: number
+  specialRequests?: string
+}
+
+export type ReservationData = HotelReservationData | TaxiReservationData
 
 const STORAGE_PREFIX = "petfendy_"
 const TOKEN_KEY = `${STORAGE_PREFIX}auth_token`
@@ -59,14 +96,14 @@ export function clearCurrentUser(): void {
   }
 }
 
-// Temporary reservation storage
-export function setTempReservation(reservation: HotelReservationData): void {
+// Temporary reservation storage (supports both hotel and taxi)
+export function setTempReservation(reservation: ReservationData): void {
   if (typeof window !== "undefined") {
     localStorage.setItem(TEMP_RESERVATION_KEY, JSON.stringify(reservation))
   }
 }
 
-export function getTempReservation(): HotelReservationData | null {
+export function getTempReservation(): ReservationData | null {
   if (typeof window !== "undefined") {
     const reservation = localStorage.getItem(TEMP_RESERVATION_KEY)
     return reservation ? JSON.parse(reservation) : null
@@ -78,6 +115,15 @@ export function clearTempReservation(): void {
   if (typeof window !== "undefined") {
     localStorage.removeItem(TEMP_RESERVATION_KEY)
   }
+}
+
+// Helper functions to check reservation type
+export function isHotelReservation(reservation: ReservationData): reservation is HotelReservationData {
+  return 'roomId' in reservation && 'checkInDate' in reservation
+}
+
+export function isTaxiReservation(reservation: ReservationData): reservation is TaxiReservationData {
+  return 'fromCity' in reservation && 'toCity' in reservation
 }
 
 // CMS Pages Management

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import type { TaxiService, TaxiVehicle, CityPricing } from "@/lib/types"
 import { mockTaxiServices, mockCityPricings, mockTurkishCities } from "@/lib/mock-data"
+import { setTempReservation, type TaxiReservationData } from "@/lib/storage"
 import { Button } from "@/components/ui/button"
 import { toast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,6 +29,7 @@ export function TaxiBooking() {
   const [toCity, setToCity] = useState("")
   const [isRoundTrip, setIsRoundTrip] = useState(false)
   const [scheduledDate, setScheduledDate] = useState("")
+  const [petCount, setPetCount] = useState(1)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
@@ -134,27 +136,24 @@ export function TaxiBooking() {
     const price = calculatePrice()
     const cityPricing = getCityPricing()
 
-    // Store taxi reservation temporarily
-    const taxiReservation = {
-      serviceName: selectedService.name,
+    // Create taxi reservation data matching TaxiReservationData interface
+    const taxiReservation: TaxiReservationData = {
       vehicleId: selectedVehicle.id,
       vehicleName: selectedVehicle.name,
-      vehicleType: selectedVehicle.type,
-      pickupCity: fromCity,
-      dropoffCity: toCity,
-      distance,
-      scheduledDate,
-      isRoundTrip,
-      basePrice: selectedService.basePrice,
+      fromCity,
+      toCity,
+      distanceKm: distance,
       pricePerKm: selectedVehicle.pricePerKm,
-      additionalFee: cityPricing?.additionalFee || 0,
-      discount: cityPricing?.discount || 0,
+      isRoundTrip,
+      scheduledDate,
+      petCount,
+      basePrice: price,
       totalPrice: price,
+      specialRequests: "", // Can be added to form if needed
     }
 
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('petfendy_temp_taxi_reservation', JSON.stringify(taxiReservation))
-    }
+    // Store using the unified storage function
+    setTempReservation(taxiReservation)
 
     toast({
       title: "✅ Rezervasyon Hazır!",
@@ -328,6 +327,17 @@ export function TaxiBooking() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Tarih ve Saat</label>
               <Input type="datetime-local" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Hayvan Sayısı</label>
+              <Input
+                type="number"
+                min="1"
+                max="10"
+                value={petCount}
+                onChange={(e) => setPetCount(Math.max(1, parseInt(e.target.value) || 1))}
+              />
             </div>
 
             {fromCity && toCity && (
