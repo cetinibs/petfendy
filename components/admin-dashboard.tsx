@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Image from "next/image"
 import type { Order, HotelRoom, TaxiService, TaxiVehicle, RoomPricing, AboutPage, PaymentGateway, PayTRConfig, ParatikaConfig } from "@/lib/types"
 import { mockHotelRooms, mockTaxiServices } from "@/lib/mock-data"
@@ -638,7 +638,7 @@ export function AdminDashboard() {
   }
 
   // Revenue calculations
-  const calculateRevenue = (
+  const calculateRevenue = useCallback((
     type: "hotel" | "taxi" | "all",
     period: "daily" | "weekly" | "monthly"
   ) => {
@@ -670,10 +670,10 @@ export function AdminDashboard() {
     const count = filteredBookings.length
     
     return { revenue, count }
-  }
+  }, [bookings])
 
   // Filtered orders
-  const getFilteredOrders = () => {
+  const filteredOrders = useMemo(() => {
     let filtered = [...orders]
     
     if (orderFilter !== "all") {
@@ -688,18 +688,17 @@ export function AdminDashboard() {
     })
     
     return filtered
-  }
+  }, [orders, orderFilter])
 
   // Paginated orders
-  const getPaginatedOrders = () => {
-    const filtered = getFilteredOrders()
+  const paginatedOrders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return filtered.slice(startIndex, endIndex)
-  }
+    return filteredOrders.slice(startIndex, endIndex)
+  }, [filteredOrders, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(getFilteredOrders().length / itemsPerPage)
-  const totalOrders = getFilteredOrders().length
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage)
+  const totalOrders = filteredOrders.length
 
   // Pagination handlers
   const goToFirstPage = () => setCurrentPage(1)
@@ -714,7 +713,6 @@ export function AdminDashboard() {
 
   // Export functions
   const exportToExcel = () => {
-    const filteredOrders = getFilteredOrders()
     const data = filteredOrders.map(order => ({
       'Fatura No': order.invoiceNumber,
       'Tarih': new Date(order.createdAt).toLocaleString("tr-TR"),
@@ -745,7 +743,6 @@ export function AdminDashboard() {
   }
 
   const exportToCSV = () => {
-    const filteredOrders = getFilteredOrders()
     const headers = ['Fatura No', 'Tarih', 'Müşteri ID', 'Ürün Sayısı', 'Toplam Tutar', 'Durum', 'Ürünler']
     
     const csvContent = [
@@ -784,7 +781,6 @@ export function AdminDashboard() {
   }
 
   const exportToPDF = () => {
-    const filteredOrders = getFilteredOrders()
     const doc = new jsPDF('l', 'mm', 'a4') // landscape orientation
     
     // Title
@@ -828,9 +824,9 @@ export function AdminDashboard() {
   }
 
   // Statistics
-  const hotelStats = calculateRevenue("hotel", dateFilter)
-  const taxiStats = calculateRevenue("taxi", dateFilter)
-  const totalStats = calculateRevenue("all", dateFilter)
+  const hotelStats = useMemo(() => calculateRevenue("hotel", dateFilter), [calculateRevenue, dateFilter])
+  const taxiStats = useMemo(() => calculateRevenue("taxi", dateFilter), [calculateRevenue, dateFilter])
+  const totalStats = useMemo(() => calculateRevenue("all", dateFilter), [calculateRevenue, dateFilter])
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
@@ -1015,7 +1011,7 @@ export function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {getFilteredOrders().length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <div className="text-center py-12">
                   <ShoppingBag className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">Sipariş bulunamadı</p>
@@ -1037,7 +1033,7 @@ export function AdminDashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getPaginatedOrders().map((order) => (
+                        {paginatedOrders.map((order) => (
                           <TableRow key={order.id} className="hover:bg-muted/30">
                             <TableCell className="font-medium">
                               #{order.invoiceNumber}
