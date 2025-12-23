@@ -57,16 +57,32 @@ export function validateCSRFToken(token: string, storedToken: string): boolean {
 export function sanitizeInput(input: string): string {
   if (!input) return '';
   
-  return input
-    .replace(/[<>]/g, "") // Remove HTML tags
-    .replace(/javascript:/gi, "") // Remove javascript: protocol
-    .replace(/on\w+\s*=/gi, "") // Remove event handlers
-    .replace(/data:/gi, "") // Remove data: protocol
-    .replace(/vbscript:/gi, "") // Remove vbscript: protocol
-    .replace(/<!--/g, "") // Remove HTML comments
-    .replace(/-->/g, "")
-    .trim()
-    .substring(0, 1000); // Limit length to prevent DoS
+  let current = input.substring(0, 1000); // Limit length to prevent DoS
+  let previous = '';
+  let iterations = 0;
+  const maxIterations = 50;
+
+  // Recursive sanitization to prevent nested attacks (e.g. javajavascript:script:)
+  while (current !== previous && iterations < maxIterations) {
+    previous = current;
+    current = current
+      .replace(/[<>]/g, "") // Remove HTML tags
+      .replace(/javascript:/gi, "") // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, "") // Remove event handlers
+      .replace(/data:/gi, "") // Remove data: protocol
+      .replace(/vbscript:/gi, "") // Remove vbscript: protocol
+      .replace(/<!--/g, "") // Remove HTML comments
+      .replace(/-->/g, "");
+
+    iterations++;
+  }
+
+  // If we hit the limit, it might be an attack loop - fail safe
+  if (iterations === maxIterations) {
+    return '';
+  }
+
+  return current.trim();
 }
 
 // HTML entity encoding for safe display
