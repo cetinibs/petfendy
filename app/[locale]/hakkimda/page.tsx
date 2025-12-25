@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer"
 import { getPageBySlug } from "@/lib/storage"
 import { mockPages } from "@/lib/mock-data"
 import type { Page } from "@/lib/types"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 export default function AboutPage() {
   const params = useParams()
@@ -60,7 +61,7 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <div 
             className="prose prose-lg max-w-none"
-            dangerouslySetInnerHTML={{ __html: pageData.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(pageData.content) }}
           />
         </div>
       </section>
