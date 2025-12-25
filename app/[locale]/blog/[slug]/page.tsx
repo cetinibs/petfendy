@@ -12,6 +12,7 @@ import { getBlogPostBySlug, getBlogPosts } from "@/lib/storage"
 import { mockBlogPosts } from "@/lib/mock-data"
 import type { BlogPost } from "@/lib/types"
 import { Calendar, User, ArrowLeft, Tag } from "lucide-react"
+import { sanitizeHtml } from "@/lib/sanitize"
 
 export default function BlogDetailPage() {
   const params = useParams()
@@ -120,7 +121,7 @@ export default function BlogDetailPage() {
         {/* Content */}
         <div 
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
         />
       </article>
 
