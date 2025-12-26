@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { Order } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -14,59 +14,73 @@ export function ReportsAnalytics() {
     setOrders(storedOrders)
   }, [])
 
-  const calculateStats = () => {
-    const totalOrders = orders.length
-    const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0)
-    const completedOrders = orders.filter((o) => o.status === "completed").length
-    const pendingOrders = orders.filter((o) => o.status === "pending").length
-    const paidOrders = orders.filter((o) => o.status === "paid").length
+  const stats = useMemo(() => {
+    const initialStats = {
+      totalOrders: 0,
+      totalRevenue: 0,
+      completedOrders: 0,
+      pendingOrders: 0,
+      paidOrders: 0,
+      hotelOrders: 0,
+      taxiOrders: 0,
+      hotelRevenue: 0,
+      taxiRevenue: 0,
+    }
 
-    const hotelOrders = orders.filter((o) => o.items.some((i) => i.type === "hotel"))
-    const taxiOrders = orders.filter((o) => o.items.some((i) => i.type === "taxi"))
+    const calculatedStats = orders.reduce((acc, order) => {
+      acc.totalOrders += 1
+      acc.totalRevenue += order.totalPrice
 
-    const hotelRevenue = hotelOrders.reduce((sum, order) => sum + order.totalPrice, 0)
-    const taxiRevenue = taxiOrders.reduce((sum, order) => sum + order.totalPrice, 0)
+      if (order.status === "completed") acc.completedOrders += 1
+      if (order.status === "pending") acc.pendingOrders += 1
+      if (order.status === "paid") acc.paidOrders += 1
 
-    const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+      const hasHotel = order.items.some((i) => i.type === "hotel")
+      const hasTaxi = order.items.some((i) => i.type === "taxi")
+
+      if (hasHotel) {
+        acc.hotelOrders += 1
+        acc.hotelRevenue += order.totalPrice
+      }
+
+      if (hasTaxi) {
+        acc.taxiOrders += 1
+        acc.taxiRevenue += order.totalPrice
+      }
+
+      return acc
+    }, initialStats)
+
+    const avgOrderValue = calculatedStats.totalOrders > 0 ? calculatedStats.totalRevenue / calculatedStats.totalOrders : 0
 
     return {
-      totalOrders,
-      totalRevenue,
-      completedOrders,
-      pendingOrders,
-      paidOrders,
-      hotelOrders: hotelOrders.length,
-      taxiOrders: taxiOrders.length,
-      hotelRevenue,
-      taxiRevenue,
+      ...calculatedStats,
       avgOrderValue,
     }
-  }
+  }, [orders])
 
-  const stats = calculateStats()
-
-  const getMonthlyData = () => {
-    const monthlyData: Record<string, number> = {}
+  const monthlyData = useMemo(() => {
+    const data: Record<string, number> = {}
 
     orders.forEach((order) => {
       const date = new Date(order.createdAt)
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = 0
+      if (!data[monthKey]) {
+        data[monthKey] = 0
       }
-      monthlyData[monthKey] += order.totalPrice
+      data[monthKey] += order.totalPrice
     })
 
-    return Object.entries(monthlyData)
+    return Object.entries(data)
       .sort()
       .map(([month, revenue]) => ({
         month,
         revenue,
       }))
-  }
+  }, [orders])
 
-  const getServiceBreakdown = () => {
+  const serviceBreakdown = useMemo(() => {
     const breakdown: Record<string, { count: number; revenue: number }> = {}
 
     orders.forEach((order) => {
@@ -87,10 +101,7 @@ export function ReportsAnalytics() {
         ...data,
       }))
       .sort((a, b) => b.revenue - a.revenue)
-  }
-
-  const monthlyData = getMonthlyData()
-  const serviceBreakdown = getServiceBreakdown()
+  }, [orders])
 
   return (
     <div className="space-y-6">
